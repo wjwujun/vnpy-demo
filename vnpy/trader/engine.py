@@ -26,10 +26,11 @@ from .object import CancelRequest, LogData, OrderRequest, SubscribeRequest
 from .setting import SETTINGS
 from .utility import get_folder_path
 
-
+#主引擎
 class MainEngine:
     """
     Acts as the core of VN Trader.
+    充当VN Trader的核心。
     """
 
     def __init__(self, event_engine: EventEngine = None):
@@ -49,6 +50,7 @@ class MainEngine:
     def add_engine(self, engine_class: Any):
         """
         Add function engine.
+        添加功能引擎。
         """
         engine = engine_class(self, self.event_engine)
         self.engines[engine.engine_name] = engine
@@ -57,6 +59,7 @@ class MainEngine:
     def add_gateway(self, gateway_class: BaseGateway):
         """
         Add gateway.
+        添加网关。
         """
         gateway = gateway_class(self.event_engine)
         self.gateways[gateway.gateway_name] = gateway
@@ -91,6 +94,7 @@ class MainEngine:
     def get_gateway(self, gateway_name: str):
         """
         Return gateway object by name.
+        按名称返回网关对象。
         """
         gateway = self.gateways.get(gateway_name, None)
         if not gateway:
@@ -100,6 +104,7 @@ class MainEngine:
     def get_engine(self, engine_name: str):
         """
         Return engine object by name.
+        按名称返回引擎对象。
         """
         engine = self.engines.get(engine_name, None)
         if not engine:
@@ -109,6 +114,7 @@ class MainEngine:
     def get_default_setting(self, gateway_name: str):
         """
         Get default setting dict of a specific gateway.
+        获取特定网关的默认设置字典
         """
         gateway = self.get_gateway(gateway_name)
         if gateway:
@@ -118,18 +124,21 @@ class MainEngine:
     def get_all_gateway_names(self):
         """
         Get all names of gatewasy added in main engine.
+        获取主引擎中添加的所有网关名称。
         """
         return list(self.gateways.keys())
 
     def get_all_apps(self):
         """
         Get all app objects.
+        获取所有应用对象。
         """
         return list(self.apps.values())
 
     def connect(self, setting: dict, gateway_name: str):
         """
         Start connection of a specific gateway.
+        开始连接特定网关。
         """
         gateway = self.get_gateway(gateway_name)
         if gateway:
@@ -138,6 +147,7 @@ class MainEngine:
     def subscribe(self, req: SubscribeRequest, gateway_name: str):
         """
         Subscribe tick data update of a specific gateway.
+        订阅特定网关的tick数据更新。
         """
         gateway = self.get_gateway(gateway_name)
         if gateway:
@@ -146,6 +156,7 @@ class MainEngine:
     def send_order(self, req: OrderRequest, gateway_name: str):
         """
         Send new order request to a specific gateway.
+        将新订单请求发送到特定网关。
         """
         gateway = self.get_gateway(gateway_name)
         if gateway:
@@ -156,6 +167,7 @@ class MainEngine:
     def cancel_order(self, req: CancelRequest, gateway_name: str):
         """
         Send cancel order request to a specific gateway.
+        将取消订单请求发送到特定网关。
         """
         gateway = self.get_gateway(gateway_name)
         if gateway:
@@ -165,6 +177,7 @@ class MainEngine:
         """
         Make sure every gateway and app is closed properly before
         programme exit.
+        确保之前正确关闭每个网关和应用程序程序退出。
         """
         # Stop event engine first to prevent new timer event.
         self.event_engine.stop()
@@ -176,9 +189,11 @@ class MainEngine:
             gateway.close()
 
 
+#用于实现函数引擎的抽象类。
 class BaseEngine(ABC):
     """
     Abstract class for implementing an function engine.
+    用于实现函数引擎的抽象类。
     """
 
     def __init__(
@@ -196,10 +211,11 @@ class BaseEngine(ABC):
         """"""
         pass
 
-
+#日志处理引擎
 class LogEngine(BaseEngine):
     """
     Processes log event and output with logging module.
+    使用日志记录模块处理日志事件和输出。
     """
 
     def __init__(self, main_engine: MainEngine, event_engine: EventEngine):
@@ -231,6 +247,7 @@ class LogEngine(BaseEngine):
     def add_null_handler(self):
         """
         Add null handler for logger.
+        为logger添加null处理程序。
         """
         null_handler = logging.NullHandler()
         self.logger.addHandler(null_handler)
@@ -238,6 +255,7 @@ class LogEngine(BaseEngine):
     def add_console_handler(self):
         """
         Add console output of log.
+        添加日志的控制台输出。
         """
         console_handler = logging.StreamHandler()
         console_handler.setLevel(self.level)
@@ -246,7 +264,8 @@ class LogEngine(BaseEngine):
 
     def add_file_handler(self):
         """
-        Add file output of log. 
+        Add file output of log.
+         添加日志的文件输出。
         """
         today_date = datetime.now().strftime("%Y%m%d")
         filename = f"vt_{today_date}.log"
@@ -267,14 +286,16 @@ class LogEngine(BaseEngine):
     def process_log_event(self, event: Event):
         """
         Output log event data with logging function.
+        输出具有记录功能的日志事件数据。
         """
         log = event.data
         self.logger.log(log.level, log.msg)
 
-
+#订单管理
 class OmsEngine(BaseEngine):
     """
     Provides order management system function for VN Trader.
+    为VN Trader提供订单管理系统功能。
     """
 
     def __init__(self, main_engine: MainEngine, event_engine: EventEngine):
@@ -294,7 +315,10 @@ class OmsEngine(BaseEngine):
         self.register_event()
 
     def add_function(self):
-        """Add query function to main engine."""
+        """
+        Add query function to main engine.
+        向主引擎添加查询功能。
+        """
         self.main_engine.get_tick = self.get_tick
         self.main_engine.get_order = self.get_order
         self.main_engine.get_trade = self.get_trade
@@ -358,24 +382,28 @@ class OmsEngine(BaseEngine):
     def get_tick(self, vt_symbol):
         """
         Get latest market tick data by vt_symbol.
+        通过vt_symbol获取最新的市场价格数据。
         """
         return self.ticks.get(vt_symbol, None)
 
     def get_order(self, vt_orderid):
         """
         Get latest order data by vt_orderid.
+        通过vt_orderid获取最新的订单数据。
         """
         return self.orders.get(vt_orderid, None)
 
     def get_trade(self, vt_tradeid):
         """
         Get trade data by vt_tradeid.
+        通过vt_tradeid获取交易数据。
         """
         return self.trades.get(vt_tradeid, None)
 
     def get_position(self, vt_positionid):
         """
         Get latest position data by vt_positionid.
+        通过vt_positionid获取最新的位置数据。
         """
         return self.positions.get(vt_positionid, None)
 
@@ -388,50 +416,58 @@ class OmsEngine(BaseEngine):
     def get_contract(self, vt_symbol):
         """
         Get contract data by vt_symbol.
+        通过vt_symbol获取合同数据。
         """
         return self.contracts.get(vt_symbol, None)
 
     def get_all_ticks(self):
         """
         Get all tick data.
+        获取所有刻度数据。
         """
         return list(self.ticks.values())
 
     def get_all_orders(self):
         """
         Get all order data.
+        获取所有订单数据。
         """
         return list(self.orders.values())
 
     def get_all_trades(self):
         """
         Get all trade data.
+        获取所有交易数据。
         """
         return list(self.trades.values())
 
     def get_all_positions(self):
         """
         Get all position data.
+        获取所有位置数据。
         """
         return list(self.positions.values())
 
     def get_all_accounts(self):
         """
         Get all account data.
+        获取所有帐户数据。
         """
         return list(self.accounts.values())
 
     def get_all_contracts(self):
         """
         Get all contract data.
+        获取所有合同数据。
         """
         return list(self.contracts.values())
 
     def get_all_active_orders(self, vt_symbol: str = ""):
         """
         Get all active orders by vt_symbol.
-
         If vt_symbol is empty, return all active orders.
+        通过vt_symbol获取所有活动订单。
+         如果vt_symbol为空，则返回所有活动订单。
         """
         if not vt_symbol:
             return list(self.active_orders.values())
@@ -443,10 +479,11 @@ class OmsEngine(BaseEngine):
             ]
             return active_orders
 
-
+#邮件
 class EmailEngine(BaseEngine):
     """
     Provides email sending function for VN Trader.
+    为VN Trader提供电子邮件发送功能。
     """
 
     def __init__(self, main_engine: MainEngine, event_engine: EventEngine):
