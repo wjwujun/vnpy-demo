@@ -363,10 +363,13 @@ class SqlManager(BaseDatabaseManager):
         data = [db_tick.to_tick() for db_tick in s]
         return data
 
+
+    #bar载入到数据库中
     def save_bar_data(self, datas: Sequence[BarData]):
         ds = [self.class_bar.from_bar(i) for i in datas]
         self.class_bar.save_all(ds)
 
+    #tick载入到数据库中
     def save_tick_data(self, datas: Sequence[TickData]):
         ds = [self.class_tick.from_tick(i) for i in datas]
         self.class_tick.save_all(ds)
