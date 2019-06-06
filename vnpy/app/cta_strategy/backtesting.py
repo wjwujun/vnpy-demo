@@ -27,10 +27,15 @@ from .template import CtaTemplate
 
 sns.set_style("whitegrid")
 
-
+#参数优化
 class OptimizationSetting:
     """
     Setting for runnning optimization.
+    设置运行优化。
+    参数设置
+        1、设置参数优化区间：如boll_window设置起始值为18，终止值为24，步进为2，这样就得到了[18, 20, 22, 24] 这4个待优化的参数了。
+        2、设置优化目标字段：如夏普比率、盈亏比、总收益率等。
+        3、随机生成参数对组合：使用迭代工具产生参数对组合，然后把参数对组合打包到一个个字典组成的列表中
     """
 
     def __init__(self):
@@ -80,7 +85,7 @@ class OptimizationSetting:
 
         return settings
 
-
+#回测引擎ctaBacktesting.py
 class BacktestingEngine:
     """"""
 
@@ -186,34 +191,34 @@ class BacktestingEngine:
         if mode:
             self.mode = mode
 
+    #加载策略
     def add_strategy(self, strategy_class: type, setting: dict):
-        """"""
+        """
+                把CTA策略逻辑，对应合约品种，以及参数设置（可在策略文件外修改）载入到回测引擎中。
+        """
         self.strategy_class = strategy_class
         self.strategy = strategy_class(
             self, strategy_class.__name__, self.vt_symbol, setting
         )
 
+    #载入历史数据
     def load_data(self):
-        """"""
+        """
+        负责载入对应品种的历史数据，大概有4个步骤：
+            1、根据数据类型不同，分成K线模式和Tick模式；
+            2、通过select().where()方法，有条件地从数据库中选取数据，其筛选标准包括：vt_symbol、 回测开始日期、回测结束日期、K线周期（K线模式下）；
+            3、order_by(DbBarData.datetime)表示需要按照时间顺序载入数据；
+            4、载入数据是以迭代方式进行的，数据最终存入self.history_data。
+        """
         self.output("开始加载历史数据")
 
         if self.mode == BacktestingMode.BAR:
-            self.history_data = load_bar_data(
-                self.symbol,
-                self.exchange,
-                self.interval,
-                self.start,
-                self.end
-            )
+            self.history_data = load_bar_data(self.symbol,self.exchange,self.interval,self.start,self.end)
         else:
-            self.history_data = load_tick_data(
-                self.symbol,
-                self.exchange,
-                self.start,
-                self.end
-            )
+            self.history_data = load_tick_data(self.symbol,self.exchange,self.start,self.end)
 
         self.output(f"历史数据加载完成，数据量：{len(self.history_data)}")
+
 
     def run_backtesting(self):
         """"""
@@ -286,8 +291,11 @@ class BacktestingEngine:
         self.output("逐日盯市盈亏计算完成")
         return self.daily_df
 
+    #计算策略统计指标
     def calculate_statistics(self, df: DataFrame = None, output=True):
-        """"""
+        """
+            calculate_statistics函数是基于逐日盯市盈亏情况（DateFrame格式）来计算衍生指标，如最大回撤、年化收益、盈亏比、夏普比率等。
+        """
         self.output("开始计算策略统计指标")
 
         if not df:
@@ -433,9 +441,15 @@ class BacktestingEngine:
         }
 
         return statistics
-
+    #统计指标绘图
     def show_chart(self, df: DataFrame = None):
-        """"""
+        """
+            通过matplotlib绘制4幅图：
+                1、资金曲线图
+                2、资金回撤图
+                3、每日盈亏图
+                4、每日盈亏分布图
+        """
         if not df:
             df = self.daily_df
         
@@ -544,9 +558,20 @@ class BacktestingEngine:
 
         self.update_daily_close(tick.last_price)
 
+    #撮合成交
     def cross_limit_order(self):
         """
         Cross limit order with last bar/tick data.
+        载入CTA策略以及相关历史数据后，策略会根据最新的数据来计算相关指标。若符合条件会生成交易信号，发出具体委托（buy/sell/short/cover），并且在下一根K线成交。
+
+        根据委托类型的不同，回测引擎提供2种撮合成交机制来尽量模仿真实交易环节：
+            1、限价单撮合成交：（以买入方向为例）先确定是否发生成交，成交标准为委托价>= 下一根K线的最低价；然后确定成交价格，成交价格为委托价与下一根K线开盘价的最小值。
+            2、停止单撮合成交：（以买入方向为例）先确定是否发生成交，成交标准为委托价<= 下一根K线的最高价；然后确定成交价格，成交价格为委托价与下一根K线开盘价的最大值。
+        下面展示在引擎中限价单撮合成交的流程：
+            1、确定会撮合成交的价格；
+            2、遍历限价单字典中的所有限价单，推送委托进入未成交队列的更新状态；
+            3、判断成交状态，若出现成交，推送成交数据和委托数据；
+            4、从字典中删除已成交的限价单。
         """
         if self.mode == BacktestingMode.BAR:
             long_cross_price = self.bar.low_price
@@ -884,15 +909,17 @@ class DailyResult:
         """"""
         self.trades.append(trade)
 
-    def calculate_pnl(
-        self,
-        pre_close: float,
-        start_pos: float,
-        size: int,
-        rate: float,
-        slippage: float,
-    ):
-        """"""
+    #计算策略盈亏情况
+    def calculate_pnl(self,pre_close: float,start_pos: float,size: int,rate: float,slippage: float,):
+        """
+            基于收盘价、当日持仓量、合约规模、滑点、手续费率等计算总盈亏与净盈亏，并且其计算结果以DataFrame格式输出，完成基于逐日盯市盈亏统计。
+
+            下面展示盈亏情况的计算过程
+                1、浮动盈亏 = 持仓量 *（当日收盘价 - 昨日收盘价）* 合约规模
+                2、实际盈亏 = 持仓变化量 * （当时收盘价 - 开仓成交价）* 合约规模
+                3、总盈亏 = 浮动盈亏 + 实际盈亏
+                4、净盈亏 = 总盈亏 - 总手续费 - 总滑点
+        """
         self.pre_close = pre_close
 
         # Holding pnl is the pnl from holding position at day start
@@ -923,24 +950,16 @@ class DailyResult:
         self.total_pnl = self.trading_pnl + self.holding_pnl
         self.net_pnl = self.total_pnl - self.commission - self.slippage
 
-
-def optimize(
-    target_name: str,
-    strategy_class: CtaTemplate,
-    setting: dict,
-    vt_symbol: str,
-    interval: Interval,
-    start: datetime,
-    rate: float,
-    slippage: float,
-    size: float,
-    pricetick: float,
-    capital: int,
-    end: datetime,
-    mode: BacktestingMode,
-):
+#参数对组合回测¶
+def optimize(target_name: str,strategy_class: CtaTemplate,setting: dict,vt_symbol: str,interval: Interval,start: datetime,rate: float,slippage: float,size: float,pricetick: float,capital: int,end: datetime,mode: BacktestingMode,):
     """
     Function for running in multiprocessing.pool
+    多进程优化时，每个进程都会运行optimize函数，输出参数对组合以及目标优化字段的结果。其步骤如下：
+        1、调用回测引擎
+        2、输入回测相关设置
+        3、输入参数对组合到策略中
+        4、运行回测
+        5、返回回测结果，包括：参数对组合、目标优化字段数值、策略统计指标
     """
     engine = BacktestingEngine()
     engine.set_parameters(

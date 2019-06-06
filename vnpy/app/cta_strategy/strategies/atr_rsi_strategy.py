@@ -9,7 +9,7 @@ from vnpy.app.cta_strategy import (
     ArrayManager,
 )
 
-
+#cta策略示例
 class AtrRsiStrategy(CtaTemplate):
     """"""
 

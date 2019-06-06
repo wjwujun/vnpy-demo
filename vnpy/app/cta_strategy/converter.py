@@ -12,7 +12,7 @@ from vnpy.trader.object import (
 )
 from vnpy.trader.constant import (Direction, Offset, Exchange)
 
-
+#定义了针对上期所品种平今/平昨模式的委托转换模块；对于其他品种用户也可以通过可选参数lock切换至锁仓模式。
 class OffsetConverter:
     """"""
 
