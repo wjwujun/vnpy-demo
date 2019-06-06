@@ -36,7 +36,6 @@ SETTINGS = {
 
 # Load global setting from json file.
 SETTING_FILENAME = "vt_setting.json"
-print(SETTING_FILENAME)
 SETTINGS.update(load_json(SETTING_FILENAME))
 
 

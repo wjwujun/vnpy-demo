@@ -25,7 +25,8 @@ def main():
     main_engine.write_log("连接CTP接口--------------------------------")
     main_engine.connect(settings,"CTP")
 
-    main_engine.add_app(DataRecorderApp)
+    data=main_engine.add_app(DataRecorderApp)
+    data.run();
     main_engine.write_log("添加行情记录App-----")
 
     sleep(10)
