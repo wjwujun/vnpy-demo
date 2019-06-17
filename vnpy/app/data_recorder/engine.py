@@ -55,7 +55,7 @@ class RecorderEngine(BaseEngine):
 
     def save_setting(self):
         """
-            主要把tick_recordings或者bar_recordings通过save_json()函数保存到data_recorder_setting.json上。
+            主要把tick_recordings或者bar_recordings通过save_json()函数保存到C:/Users/Administrator/.vntrader文件夹data_recorder_setting.json上。
         """
         setting = {
             "tick": self.tick_recordings,
@@ -68,8 +68,7 @@ class RecorderEngine(BaseEngine):
         """
             在while循环中，从queue队列读取任务，调用save_tick_data()或者save_bar_data()函数来记录数据，并且载入到数据库中。
         """
-        print("1111111111111111111----行情记录模块开始")
-
+        print("1111111111111111111")
         while self.active:
             try:
                 task = self.queue.get(timeout=1)

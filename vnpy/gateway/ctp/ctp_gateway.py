@@ -141,6 +141,8 @@ class CtpGateway(BaseGateway):
         self.td_api = CtpTdApi(self)
         self.md_api = CtpMdApi(self)
         self.activeContracts = []
+        #期货合约下载
+        self.activeContracts = []
 
     def connect(self, setting: dict):
         """"""
