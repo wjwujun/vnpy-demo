@@ -1,47 +1,112 @@
-from vnpy.app.data_recorder import DataRecorderApp
-from vnpy.event import EventEngine
+
+import multiprocessing
 from time import sleep
+from datetime import datetime, time
+from logging import INFO
+
+from vnpy.event import EventEngine
+from vnpy.trader.setting import SETTINGS
 from vnpy.trader.engine import MainEngine
+
 from vnpy.gateway.ctp import CtpGateway
-from vnpy.trader.utility import load_json,save_json
 from vnpy.app.cta_strategy import CtaStrategyApp
 from vnpy.app.cta_strategy.base import EVENT_CTA_LOG
-from vnpy.trader.setting import get_settings
 
-def main():
-    vt_setting=get_settings()
-    save_json("vt_setting.json",vt_setting)
-    settings=load_json("connect_ctp.json")
+SETTINGS["log.active"] = True
+SETTINGS["log.level"] = INFO
+SETTINGS["log.console"] = True
+
+ctp_setting = {
+    "用户名": "107462",
+    "密码": "110120",
+    "经纪商代码": "9999",
+    "交易服务器": "tcp://180.168.146.187:10001",
+    "行情服务器": "tcp://180.168.146.187:10011",
+    "产品名称": "simnow_client_test",
+    "授权编码": "0000000000000000",
+    "产品信息": ""
+}
+
+
+def run_child():
+    """
+    Running in the child process.
+    """
+    SETTINGS["log.file"] = True
 
     event_engine = EventEngine()
-
-    ##主引擎，负责对API的调度
     main_engine = MainEngine(event_engine)
-    main_engine.write_log("--------------------------------主引擎创建成功")
-
-    main_engine.event_engine.register(EVENT_CTA_LOG,main_engine.engines["log"].process_log_event)
     main_engine.add_gateway(CtpGateway)
-    main_engine.write_log("网关创建成功--------------------------------")
-    main_engine.write_log("连接CTP接口--------------------------------")
-    main_engine.connect(settings,"CTP")
+    cta_engine = main_engine.add_app(CtaStrategyApp)
+    main_engine.write_log("主引擎创建成功")
 
-    main_engine.add_app(DataRecorderApp)
-    main_engine.write_log("添加行情记录App-----")
+    log_engine = main_engine.get_engine("log")
+    event_engine.register(EVENT_CTA_LOG, log_engine.process_log_event)
+    main_engine.write_log("注册日志事件监听")
 
-    sleep(10)
-    cta=main_engine.add_app(CtaStrategyApp)
-    main_engine.write_log("-------------创建CTA策略引擎成功")
-
-    cta.init_engine()
-    main_engine.write_log("-------------初始化CTA策略引擎成功")
-
-    cta.init_all_strategies()
-    main_engine.write_log("-------------初始化CTA策略成功")
+    main_engine.connect(ctp_setting, "CTP")
+    main_engine.write_log("连接CTP接口")
 
     sleep(10)
-    cta.start_all_strategies()
+
+    cta_engine.init_engine()
+    main_engine.write_log("CTA策略初始化完成")
+
+    cta_engine.init_all_strategies()
+    sleep(60)  # Leave enough time to complete strategy initialization
+    main_engine.write_log("CTA策略全部初始化")
+
+    cta_engine.start_all_strategies()
+    main_engine.write_log("CTA策略全部启动")
 
     while True:
         sleep(1)
+
+
+def run_parent():
+    """
+    Running in the parent process.
+    """
+    print("启动CTA策略守护父进程")
+
+    # Chinese futures market trading period (day/night)
+    DAY_START = time(8, 45)
+    DAY_END = time(15, 30)
+
+    NIGHT_START = time(20, 45)
+    NIGHT_END = time(2, 45)
+
+    child_process = None
+
+    while True:
+        current_time = datetime.now().time()
+        trading = False
+
+        # Check whether in trading period
+        if (
+                        (current_time >= DAY_START and current_time <= DAY_END)
+                    or (current_time >= NIGHT_START)
+                or (current_time <= NIGHT_END)
+        ):
+            trading = True
+
+        # Start child process in trading period
+        if trading and child_process is None:
+            print("启动子进程")
+            child_process = multiprocessing.Process(target=run_child)
+            child_process.start()
+            print("子进程启动成功")
+
+        # 非记录时间则退出子进程
+        if not trading and child_process is not None:
+            print("关闭子进程")
+            child_process.terminate()
+            child_process.join()
+            child_process = None
+            print("子进程关闭成功")
+
+        sleep(5)
+
+
 if __name__ == "__main__":
-    main()
+    run_parent()
