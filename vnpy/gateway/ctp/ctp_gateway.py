@@ -122,9 +122,7 @@ symbol_size_map = {}
 class CtpGateway(BaseGateway):
     """
     VN Trader Gateway for CTP .
-    """
-
-    default_setting = {
+     default_setting = {
         "用户名": "107462",
         "密码": "110120",
         "经纪商代码": "9999",
@@ -133,6 +131,9 @@ class CtpGateway(BaseGateway):
         "产品名称": "simnow_client_test",
         "授权编码": "0000000000000000"
     }
+    """
+
+
 
     def __init__(self, event_engine):
         """Constructor"""
@@ -208,7 +209,9 @@ class CtpGateway(BaseGateway):
         self.query_functions.append(func)
         
     def init_query(self):
-        """"""
+        """
+            查询账户信息
+        """
         self.count = 0
         self.query_functions = [self.query_account, self.query_position]
         self.event_engine.register(EVENT_TIMER, self.process_timer_event)
@@ -224,15 +227,15 @@ class CtpMdApi(MdApi):
         self.gateway = gateway
         self.gateway_name = gateway.gateway_name
         
-        self.reqid = 0
+        self.reqid = 0       # 操作请求编号
         
-        self.connect_status = False
-        self.login_status = False
+        self.connect_status = False    # 连接状态
+        self.login_status = False   # 登录状态
         self.subscribed = set()
         
-        self.userid = ""
-        self.password = ""
-        self.brokerid = 0
+        self.userid = ""       # 账号
+        self.password = ""     # 密码
+        self.brokerid = 0      # 经纪商代码
 
     # 服务器连接成功的回调函数
     def onFrontConnected(self):
@@ -286,31 +289,32 @@ class CtpMdApi(MdApi):
         """
         Callback of tick data update.
         """
-        symbol = data["InstrumentID"]
+        symbol = data["InstrumentID"]     #合约代码
 
         exchange = symbol_exchange_map.get(symbol, "")
         if not exchange:
             return
         
         timestamp = f"{data['ActionDay']} {data['UpdateTime']}.{int(data['UpdateMillisec']/100)}"
-        
+
+        # 创建对象
         tick = TickData(
-            symbol=symbol,
-            exchange=exchange,
-            datetime=datetime.strptime(timestamp, "%Y%m%d %H:%M:%S.%f"),
+            symbol=symbol,                  #合约代码
+            exchange=exchange,              #交易所代码   #exchangeMapReverse.get(data['ExchangeID'], u'未知')
+            datetime=datetime.strptime(timestamp, "%Y%m%d %H:%M:%S.%f"),     #交易日期
             name=symbol_name_map[symbol],
-            volume=data["Volume"],
-            last_price=data["LastPrice"],
-            limit_up=data["UpperLimitPrice"],
-            limit_down=data["LowerLimitPrice"],
-            open_price=data["OpenPrice"],
-            high_price=data["HighestPrice"],
-            low_price=data["LowestPrice"],
-            pre_close=data["PreClosePrice"],
-            bid_price_1=data["BidPrice1"],
-            ask_price_1=data["AskPrice1"],
-            bid_volume_1=data["BidVolume1"],
-            ask_volume_1=data["AskVolume1"],
+            volume=data["Volume"],                  #数量
+            last_price=data["LastPrice"],           #最新价
+            limit_up=data["UpperLimitPrice"],       #涨停板价
+            limit_down=data["LowerLimitPrice"],     #跌停板价
+            open_price=data["OpenPrice"],           #开仓价
+            high_price=data["HighestPrice"],        #最高价
+            low_price=data["LowestPrice"],          #最低价
+            pre_close=data["PreClosePrice"],        #昨收盘价
+            bid_price_1=data["BidPrice1"],          #申买价一
+            ask_price_1=data["AskPrice1"],          #申卖价一
+            bid_volume_1=data["BidVolume1"],        #申买量一
+            ask_volume_1=data["AskVolume1"],        #申卖量一
             gateway_name=self.gateway_name
         )
         self.gateway.on_tick(tick)
@@ -365,6 +369,8 @@ class CtpMdApi(MdApi):
         if self.connect_status:
             self.exit()
 
+###########################################################
+
 # 交易CTP_API实现
 class CtpTdApi(TdApi):
     """"""
@@ -376,26 +382,26 @@ class CtpTdApi(TdApi):
         self.gateway = gateway
         self.gateway_name = gateway.gateway_name
         
-        self.reqid = 0
+        self.reqid = 0      # 操作请求编号
         self.order_ref = 0
         
-        self.connect_status = False
-        self.login_status = False
+        self.connect_status = False    # 连接状态
+        self.login_status = False      # 登录状态
         self.auth_staus = False
         self.login_failed = False
         
-        self.userid = ""
-        self.password = ""
-        self.brokerid = 0
-        self.auth_code = ""
-        self.product_info = ""
+        self.userid = ""            # 账号
+        self.password = ""          # 密码
+        self.brokerid = 0           # 经纪商代码
+        self.auth_code = ""         #授权编码
+        self.product_info = ""      #产品名称
         
         self.frontid = 0
         self.sessionid = 0
         
-        self.order_data = []
-        self.trade_data = []
-        self.positions = {}
+        self.order_data = []   #订单数据
+        self.trade_data = []   #交易数据
+        self.positions = {}    #持仓数据
         self.sysid_orderid_map = {}
 
     # 服务器连接
@@ -560,8 +566,9 @@ class CtpTdApi(TdApi):
         """
         Callback of instrument query.
         """
-        #print("===================================")
-        #print(data["ProductClass"])
+
+        print("===================================")
+        print(data["ProductClass"])
         product = PRODUCT_CTP2VT.get(data["ProductClass"], None)
         if product:            
             contract = ContractData(
@@ -573,7 +580,18 @@ class CtpTdApi(TdApi):
                 pricetick=data["PriceTick"],
                 gateway_name=self.gateway_name
             )
-            
+
+            # 订阅行情信息，此处加过滤条件，筛选出自己想要的合约，进行订阅
+            """
+                req = SubscribeRequest(
+                    symbol=data["InstrumentID"], exchange=EXCHANGE_CTP2VT[data["ExchangeID"]]
+                )
+                CtpGateway.subscribe(req)
+            """
+
+
+
+
             # For option only
             if contract.product == Product.OPTION:
                 contract.option_underlying = data["UnderlyingInstrID"],
@@ -664,7 +682,8 @@ class CtpTdApi(TdApi):
             gateway_name=self.gateway_name
         )
         self.gateway.on_trade(trade)        
-    
+
+    #连接
     def connect(self, address: str, userid: str, password: str, brokerid: int, auth_code: str, product_info: str):
         """
         Start connection to server.
@@ -686,10 +705,12 @@ class CtpTdApi(TdApi):
             self.init()            
         else:
             self.authenticate()
-    
+
+    #身份验证
     def authenticate(self):
         """
         Authenticate with auth_code and product_info.
+        使用auth_code和product_info进行身份验证。
         """
         req = {
             "UserID": self.userid,
@@ -793,6 +814,7 @@ class CtpTdApi(TdApi):
     def query_position(self):
         """
         Query position holding data.
+        查询位置保持数据。
         """
         if not symbol_exchange_map:
             return

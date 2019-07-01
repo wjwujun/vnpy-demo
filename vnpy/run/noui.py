@@ -75,7 +75,7 @@ def run_parent():
     NIGHT_START = time(20, 45)     # 夜盘启动和停止时间
     NIGHT_END = time(2, 45)
 
-    child_process = None
+    child_process = None     # 子进程句柄
 
     while True:
         current_time = datetime.now().time()

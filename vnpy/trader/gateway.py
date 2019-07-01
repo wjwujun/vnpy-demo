@@ -88,6 +88,8 @@ class BaseGateway(ABC):
         """
         Tick event push.
         Tick event of a specific vt_symbol is also pushed.
+        事件推送。
+         还推送了特定vt_symbol的Tick事件。
         """
         self.on_event(EVENT_TICK, tick)
         self.on_event(EVENT_TICK + tick.vt_symbol, tick)
@@ -96,6 +98,8 @@ class BaseGateway(ABC):
         """
         Trade event push.
         Trade event of a specific vt_symbol is also pushed.
+        交易事件推动。
+         还推送了特定vt_symbol的交易事件。
         """
         self.on_event(EVENT_TRADE, trade)
         self.on_event(EVENT_TRADE + trade.vt_symbol, trade)
@@ -104,6 +108,7 @@ class BaseGateway(ABC):
         """
         Order event push.
         Order event of a specific vt_orderid is also pushed.
+        还推送了特定vt_orderid的订单事件。
         """
         self.on_event(EVENT_ORDER, order)
         self.on_event(EVENT_ORDER + order.vt_orderid, order)
