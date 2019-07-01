@@ -69,11 +69,10 @@ def run_parent():
     """
     print("启动CTA策略守护父进程")
 
-    # Chinese futures market trading period (day/night)
-    DAY_START = time(8, 45)
+    DAY_START = time(8, 45)    # 日盘启动和停止时间
     DAY_END = time(15, 30)
 
-    NIGHT_START = time(20, 45)
+    NIGHT_START = time(20, 45)     # 夜盘启动和停止时间
     NIGHT_END = time(2, 45)
 
     child_process = None
@@ -82,15 +81,18 @@ def run_parent():
         current_time = datetime.now().time()
         trading = False
 
-        # Check whether in trading period
+        # 判断当前处于的时间段
         if (
-                        (current_time >= DAY_START and current_time <= DAY_END)
-                    or (current_time >= NIGHT_START)
-                or (current_time <= NIGHT_END)
+            (current_time >= DAY_START and current_time <= DAY_END)
+            or (current_time >= NIGHT_START)
+            or (current_time <= NIGHT_END)
         ):
             trading = True
 
-        # Start child process in trading period
+        if (datetime.today().weekday() == 5  and current_time > NIGHT_END) or datetime.today().weekday() == 6:
+            trading = False
+
+        # 记录时间则需要启动子进程
         if trading and child_process is None:
             print("启动子进程")
             child_process = multiprocessing.Process(target=run_child)
