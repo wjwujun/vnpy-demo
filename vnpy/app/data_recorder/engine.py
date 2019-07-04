@@ -182,7 +182,7 @@ class RecorderEngine(BaseEngine):
         print("===============")
         print(contract)
         print(vt_symbol)
-
+        #self.tick_recordings.add(vt_symbol)
         #if (vt_symbol in self.tick_recordings or vt_symbol in self.bar_recordings):
         self.subscribe(contract)
 
