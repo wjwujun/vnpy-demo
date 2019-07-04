@@ -15,7 +15,7 @@ from .event import (
     EVENT_ACCOUNT,
     EVENT_CONTRACT,
     EVENT_LOG,
-)
+    EVENT_ALLCONTRACTS)
 from .object import (
     TickData,
     OrderData,
@@ -147,6 +147,15 @@ class BaseGateway(ABC):
         """
         log = LogData(msg=msg, gateway_name=self.gateway_name)
         self.on_log(log)
+
+
+    def onAllContracts(self,activateContracts):
+        #行情记录模块
+        """合约基础信息推送"""
+        self.on_event(EVENT_ALLCONTRACTS,activateContracts)
+
+
+
 
     @abstractmethod
     def connect(self, setting: dict):

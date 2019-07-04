@@ -24,7 +24,7 @@ def run_child_process():
     log_engine.critical('CTP接口连接成功')
 
     main_engine.add_app(DataRecorderApp)
-    log_engine.critical('添加行情记录App')    
+    log_engine.critical('添加行情记录App')
     print('-'*73)
     while True:
         sleep(1)    

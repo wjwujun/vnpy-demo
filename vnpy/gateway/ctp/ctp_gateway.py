@@ -141,9 +141,10 @@ class CtpGateway(BaseGateway):
 
         self.td_api = CtpTdApi(self)
         self.md_api = CtpMdApi(self)
-        self.activeContracts = []
-        #期货合约下载
-        self.activeContracts = []
+        # 期货合约下载
+        #self.activeContracts = []
+
+
 
     def connect(self, setting: dict):
         """"""
@@ -290,8 +291,12 @@ class CtpMdApi(MdApi):
         Callback of tick data update.
         """
         symbol = data["InstrumentID"]     #合约代码
+        print("合约详细信息-----------")
+        print(symbol)
 
         exchange = symbol_exchange_map.get(symbol, "")
+
+
         if not exchange:
             return
         
@@ -317,6 +322,8 @@ class CtpMdApi(MdApi):
             ask_volume_1=data["AskVolume1"],        #申卖量一
             gateway_name=self.gateway_name
         )
+        print("11111111111111111111111111111111111111----tick")
+        print(tick)
         self.gateway.on_tick(tick)
 
     #连接服务器
@@ -403,6 +410,8 @@ class CtpTdApi(TdApi):
         self.trade_data = []   #交易数据
         self.positions = {}    #持仓数据
         self.sysid_orderid_map = {}
+
+        self.ontract = []
 
     # 服务器连接
     def onFrontConnected(self):
@@ -566,9 +575,6 @@ class CtpTdApi(TdApi):
         """
         Callback of instrument query.
         """
-
-        print("===================================")
-        print(data["ProductClass"])
         product = PRODUCT_CTP2VT.get(data["ProductClass"], None)
         if product:            
             contract = ContractData(
@@ -581,16 +587,6 @@ class CtpTdApi(TdApi):
                 gateway_name=self.gateway_name
             )
 
-            # 订阅行情信息，此处加过滤条件，筛选出自己想要的合约，进行订阅
-            """
-                req = SubscribeRequest(
-                    symbol=data["InstrumentID"], exchange=EXCHANGE_CTP2VT[data["ExchangeID"]]
-                )
-                CtpGateway.subscribe(req)
-            """
-
-
-
 
             # For option only
             if contract.product == Product.OPTION:
@@ -598,21 +594,34 @@ class CtpTdApi(TdApi):
                 contract.option_type = OPTIONTYPE_CTP2VT.get(data["OptionsType"], None),
                 contract.option_strike = data["StrikePrice"],
                 contract.option_expiry = datetime.strptime(data["ExpireDate"], "%Y%m%d"),
-            
+            #print("--------------------------合约信息详情")
+            #print(contract)
             self.gateway.on_contract(contract)
             
             symbol_exchange_map[contract.symbol] = contract.exchange
             symbol_name_map[contract.symbol] = contract.name
             symbol_size_map[contract.symbol] = contract.size
-        
+
+            #增加所有合约代码
+            #self.activeContracts.append(data['InstrumentID'])
+
         if last:
             self.gateway.write_log("合约信息查询成功")
-            print("-----------------------------------合约信息")
-            print(symbol_exchange_map)
-            print("-----------------------------------名字")
-            print(symbol_name_map)
-            print("-----------------------------------大小")
-            print(symbol_size_map)
+            #self.gateway.onAllContracts(self.activeContracts)
+            # print("-----------------------------------合约信息")
+            # print(symbol_exchange_map)
+            # print(type(symbol_exchange_map))
+            #
+            # print(type(symbol_exchange_map.get("SR911")))
+            #
+            # print(symbol_exchange_map.get("SR911"))
+            # print(symbol_exchange_map.get("a1911"))
+            #
+            #
+            # print("-----------------------------------名字")
+            # print(symbol_name_map)
+            # print("-----------------------------------大小")
+            # print(symbol_size_map)
 
             for data in self.order_data:
                 self.onRtnOrder(data)

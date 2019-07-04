@@ -47,14 +47,15 @@ class EventEngine:
         self._active = False
         self._thread = Thread(target=self._run)
         self._timer = Thread(target=self._run_timer)
+
+        # 其中每个键对应的值是一个列表，列表中保存了对该事件进行监听的函数功能
         self._handlers = defaultdict(list)
+
+        # __generalHandlers是一个列表，用来保存通用回调函数（所有事件均调用）
         self._general_handlers = []
 
+    # 引擎运行
     def _run(self):
-        """
-        Get event from queue and then process it.
-        从队列中获取事件然后处理它。
-        """
         while self._active:
             try:
                 event = self._queue.get(block=True, timeout=1)
@@ -62,96 +63,66 @@ class EventEngine:
             except Empty:
                 pass
 
+    # 处理事件
     def _process(self, event: Event):
-        """
-        First ditribute event to those handlers registered listening
-        to this type.
-         第一次ditribute事件给那些处理者注册听
-         这种类型。
+        # 检查是否存在对该事件进行监听的处理函数
+        if event.type in self._handlers:        # 若存在，则按顺序将事件传递给处理函数执行
+             for handler in self._handlers[event.type]:
+                 handler(event)
 
-        Then distrubute event to those general handlers which listens
-        to all types.
-        然后将事件分配给那些倾听的普通处理程序
-         所有类型。
-        """
-        if event.type in self._handlers:
-            [handler(event) for handler in self._handlers[event.type]]
-
+        # 调用通用处理函数进行处理
         if self._general_handlers:
-            [handler(event) for handler in self._general_handlers]
+            for handler in self._general_handlers:
+                handler(event)
 
+    # 运行在计时器线程中的循环函数
     def _run_timer(self):
-        """
-        Sleep by interval second(s) and then generate a timer event.
-        按秒间隔睡眠，然后生成计时器事件。
-        """
         while self._active:
-            sleep(self._interval)
-            event = Event(EVENT_TIMER)
-            self.put(event)
+            sleep(self._interval)            # 等待
+            event = Event(EVENT_TIMER)        # 创建计时器事件
+            self.put(event)             # 向队列中存入计时器事件
 
+    # 引擎启动, timer：是否要启动计时器
     def start(self):
-        """
-        Start event engine to process events and generate timer events.
-        启动事件引擎以处理事件并生成计时器事件。
-        """
-        self._active = True
-        self._thread.start()
-        self._timer.start()
+        self._active = True      # 将引擎设为启动
+        self._thread.start()         # 启动事件处理线程
+        self._timer.start()         # 启动计时器，计时器事件间隔默认设定为1秒
 
+    # 停止引擎
     def stop(self):
-        """
-        Stop event engine.
-        停止事件引擎。
-        """
         self._active = False
         self._timer.join()
-        self._thread.join()
+        self._thread.join()          # 等待事件处理线程退出
 
     def put(self, event: Event):
-        """
-        Put an event object into event queue.
-        将事件对象放入事件队列。
-        """
         self._queue.put(event)
 
+    # 注册事件处理函数监听
     def register(self, type: str, handler: HandlerType):
-        """
-        Register a new handler function for a specific event type. Every
-        function can only be registered once for each event type.
-        为特定事件类型注册新的处理函数。每个函数只能为每种事件类型注册一次。
-        """
+        # 尝试获取该事件类型对应的处理函数列表，若无defaultDict会自动创建新的list
         handler_list = self._handlers[type]
+
+        # 若要注册的处理器不在该事件的处理器列表中，则注册该事件
         if handler not in handler_list:
             handler_list.append(handler)
 
+    # 注销事件处理函数监听
     def unregister(self, type: str, handler: HandlerType):
-        """
-        Unregister an existing handler function from event engine.
-        从事件引擎取消注册现有的处理函数。
-        """
-        handler_list = self._handlers[type]
 
-        if handler in handler_list:
+        handler_list = self._handlers[type]     # 尝试获取该事件类型对应的处理函数列表，若无则忽略该次注销请求
+
+        if handler in handler_list:     # 如果该函数存在于列表中，则移除
             handler_list.remove(handler)
 
         if not handler_list:
             self._handlers.pop(type)
 
+    # 注册通用事件处理函数监听
     def register_general(self, handler: HandlerType):
-        """
-        Register a new handler function for all event types. Every 
-        function can only be registered once for each event type.
-        为所有事件类型注册新的处理函数。一切
-         函数只能为每种事件类型注册一次。
-        """
         if handler not in self._general_handlers:
             self._general_handlers.append(handler)
-
+    #注销通用事件处理函数监听
     def unregister_general(self, handler: HandlerType):
-        """
-        Unregister an existing general handler function.
-        取消注册现有的通用处理函数。
-        """
+
         if handler in self._general_handlers:
             self._general_handlers.remove(handler)

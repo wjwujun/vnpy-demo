@@ -52,8 +52,8 @@ class MainEngine:
         Add function engine.
         添加功能引擎。
         """
-        engine = engine_class(self, self.event_engine)
-        self.engines[engine.engine_name] = engine
+        engine = engine_class(self, self.event_engine)      ##给功能引擎添加事件处理引擎
+        self.engines[engine.engine_name] = engine           ##给引擎列表添加，功能引擎的名称
         return engine
 
     def add_gateway(self, gateway_class: BaseGateway):
@@ -67,12 +67,12 @@ class MainEngine:
 
     def add_app(self, app_class: BaseApp):
         """
-        Add app.
+          添加应用
         """
         app = app_class()
-        self.apps[app.app_name] = app
-
-        engine = self.add_engine(app.engine_class)
+        self.apps[app.app_name] = app       #添加任务名字，如cta交易模块，行情交易模块
+        print()
+        engine = self.add_engine(app.engine_class)      #传递功能引擎，如CtaEngine实盘引擎
         return engine
 
     def init_engines(self):
