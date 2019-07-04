@@ -182,9 +182,11 @@ class RecorderEngine(BaseEngine):
         print("===============")
         print(contract)
         print(vt_symbol)
+        #self.add_tick_recording(vt_symbol)       #添加tick合约信息到本地
+        #self.add_bar_recording(vt_symbol)        #添加bar合约信息到本地配置
         #self.tick_recordings.add(vt_symbol)
-        #if (vt_symbol in self.tick_recordings or vt_symbol in self.bar_recordings):
-        self.subscribe(contract)
+        if (vt_symbol in self.tick_recordings or vt_symbol in self.bar_recordings):
+            self.subscribe(contract)
 
     def write_log(self, msg: str):
         """"""
