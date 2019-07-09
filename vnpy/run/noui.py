@@ -3,6 +3,7 @@ from time import sleep
 from datetime import datetime, time
 from logging import INFO
 
+from vnpy.app.data_recorder import DataRecorderApp
 from vnpy.event import EventEngine
 from vnpy.trader.setting import SETTINGS
 from vnpy.trader.engine import MainEngine
@@ -41,6 +42,9 @@ def run_child():
     cta_engine = main_engine.add_app(CtaStrategyApp)
     main_engine.write_log("主引擎创建成功")
 
+    main_engine.add_app(DataRecorderApp)
+
+
     log_engine = main_engine.get_engine("log")
     event_engine.register(EVENT_CTA_LOG, log_engine.process_log_event)
     main_engine.write_log("注册日志事件监听")
@@ -48,13 +52,13 @@ def run_child():
     main_engine.connect(ctp_setting, "CTP")
     main_engine.write_log("连接CTP接口")
 
-    sleep(10)
+    #sleep(10)
 
     cta_engine.init_engine()
     main_engine.write_log("CTA策略初始化完成")
 
     cta_engine.init_all_strategies()
-    sleep(60)   # Leave enough time to complete strategy initialization
+    #sleep(60)   # Leave enough time to complete strategy initialization
     main_engine.write_log("CTA策略全部初始化")
 
     cta_engine.start_all_strategies()

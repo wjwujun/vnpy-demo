@@ -306,6 +306,9 @@ class CtpMdApi(MdApi):
             ask_volume_1=data["AskVolume1"],
             gateway_name=self.gateway_name
         )
+        print("111111111111111111111")
+        print(tick)
+
         self.gateway.on_tick(tick)  
 
     def connect(self, address: str, userid: str, password: str, brokerid: int):

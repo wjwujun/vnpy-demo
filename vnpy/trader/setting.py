@@ -25,12 +25,12 @@ SETTINGS = {
     "rqdata.username": "",
     "rqdata.password": "",
 
-    "database.driver": "sqlite",  # see database.Driver
-    "database.database": "database.db",  # for sqlite, use this as filepath
-    "database.host": "localhost",
+    "database.driver": "mysql",  # see database.Driver
+    "database.database": "CTP",  # for sqlite, use this as filepath
+    "database.host": "47.98.136.216",
     "database.port": 3306,
     "database.user": "root",
-    "database.password": "",
+    "database.password": "wj@110120_*@mysql",
     "database.authentication_source": "admin",  # for mongodb
 }
 
