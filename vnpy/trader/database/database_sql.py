@@ -1,6 +1,7 @@
 """"""
 import symbol
 from datetime import datetime
+from time import sleep
 from typing import *
 
 from networkx import volume
@@ -371,7 +372,9 @@ class SqlManager(BaseDatabaseManager):
 
     #tick载入到数据库中
     def save_tick_data(self, datas: Sequence[TickData]):
+
         ds = [self.class_tick.from_tick(i) for i in datas]
+
         self.class_tick.save_all(ds)
 
     def get_newest_bar_data(

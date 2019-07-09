@@ -126,8 +126,8 @@ class CtpGateway(BaseGateway):
         "用户名": "107462",
         "密码": "110120",
         "经纪商代码": "9999",
-        "交易服务器": "tcp://180.168.146.187:10001",
-        "行情服务器": "tcp://180.168.146.187:10011",
+        "交易服务器": "tcp://180.168.146.187:10100",
+        "行情服务器": "tcp://180.168.146.187:10110",
         "产品名称": "simnow_client_test",
         "授权编码": "0000000000000000"
     }
@@ -291,8 +291,8 @@ class CtpMdApi(MdApi):
         Callback of tick data update.
         """
         symbol = data["InstrumentID"]     #合约代码
-        print("合约详细信息-----------")
-        print(symbol)
+        #print("合约详细信息-----------")
+        #print(symbol)
 
         exchange = symbol_exchange_map.get(symbol, "")
 
@@ -322,8 +322,8 @@ class CtpMdApi(MdApi):
             ask_volume_1=data["AskVolume1"],        #申卖量一
             gateway_name=self.gateway_name
         )
-        print("11111111111111111111111111111111111111----tick")
-        print(tick)
+        #print("11111111111111111111111111111111111111----tick")
+        #print(tick)
         self.gateway.on_tick(tick)
 
     #连接服务器

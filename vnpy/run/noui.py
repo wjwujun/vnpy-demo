@@ -21,8 +21,8 @@ ctp_setting = {
     "用户名": "107462",
     "密码": "110120",
     "经纪商代码": "9999",
-    "交易服务器": "tcp://180.168.146.187:10000",
-    "行情服务器": "tcp://180.168.146.187:10010",
+    "交易服务器": "tcp://180.168.146.187:10101",
+    "行情服务器": "tcp://180.168.146.187:10111",
     "产品名称": "simnow_client_test",
     "授权编码": "0000000000000000",
     "产品信息": ""
@@ -47,7 +47,7 @@ def run_child():
 
 
     data_engine=main_engine.add_app(DataRecorderApp)
-    main_engine.write_log("----------创建数据记录引擎")
+    main_engine.write_log("创建数据记录引擎")
 
     log_engine = main_engine.get_engine("log")
     event_engine.register(EVENT_CTA_LOG, log_engine.process_log_event)

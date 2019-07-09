@@ -1,6 +1,7 @@
 from threading import Thread
 from queue import Queue, Empty
 from copy import copy
+from time import sleep
 
 from vnpy.event import Event, EventEngine
 from vnpy.trader.engine import BaseEngine, MainEngine
@@ -62,6 +63,10 @@ class RecorderEngine(BaseEngine):
                 task = self.queue.get(timeout=1)
                 task_type, data = task
                 if task_type == "tick":
+                    print("tick插入数据库--------------")
+                    print([data])
+                    print(data["datetime"])
+                    sleep(5)
                     database_manager.save_tick_data([data])
                 elif task_type == "bar":
                     database_manager.save_bar_data([data])
@@ -159,7 +164,6 @@ class RecorderEngine(BaseEngine):
 
     def register_event(self):
         """"""
-        print("2323333333333333333333333333333333")
         self.event_engine.register(EVENT_TICK, self.process_tick_event)
         self.event_engine.register(EVENT_CONTRACT, self.process_contract_event)
 
@@ -179,12 +183,11 @@ class RecorderEngine(BaseEngine):
         """"""
         contract = event.data
         vt_symbol = contract.vt_symbol
-        print("===============")
-        print(contract)
-        print(vt_symbol)
+        # print("===============")
+        # print(contract)
+        # print(vt_symbol)
         #self.add_tick_recording(vt_symbol)       #添加tick合约信息到本地
         #self.add_bar_recording(vt_symbol)        #添加bar合约信息到本地配置
-        #self.tick_recordings.add(vt_symbol)
         if (vt_symbol in self.tick_recordings or vt_symbol in self.bar_recordings):
             self.subscribe(contract)
 
