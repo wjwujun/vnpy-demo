@@ -16,6 +16,7 @@ from vnpy.trader.engine import BaseEngine, MainEngine
 from vnpy.trader.object import (
     OrderRequest,
     SubscribeRequest,
+    HistoryRequest,
     LogData,
     TickData,
     BarData,
@@ -35,7 +36,7 @@ from vnpy.trader.constant import (
     Offset, 
     Status
 )
-from vnpy.trader.utility import load_json, save_json, extract_vt_symbol
+from vnpy.trader.utility import load_json, save_json, extract_vt_symbol, round_to
 from vnpy.trader.database import database_manager
 from vnpy.trader.rqdata import rqdata_client
 
@@ -62,16 +63,9 @@ STOP_STATUS_MAP = {
     Status.REJECTED: StopOrderStatus.CANCELLED
 }
 
-#实盘引擎
+
 class CtaEngine(BaseEngine):
-    """
-        定义了CTA策略实盘引擎，其中包括：
-            1、RQData客户端初始化和数据载入
-            2、策略的初始化和启动
-            3、推送Tick订阅行情到策略中
-            4、挂撤单操作
-            5、策略的停止和移除等。
-    """
+    """"""
 
     engine_type = EngineType.LIVE  # live trading engine
 
@@ -104,6 +98,8 @@ class CtaEngine(BaseEngine):
         self.rq_client = None
         self.rq_symbols = set()
 
+        self.vt_tradeids = set()    # for filtering duplicate trade
+
         self.offset_converter = OffsetConverter(self.main_engine)
 
     def init_engine(self):
@@ -118,7 +114,7 @@ class CtaEngine(BaseEngine):
 
     def close(self):
         """"""
-        pass
+        self.stop_all_strategies()
 
     def register_event(self):
         """"""
@@ -127,7 +123,6 @@ class CtaEngine(BaseEngine):
         self.event_engine.register(EVENT_TRADE, self.process_trade_event)
         self.event_engine.register(EVENT_POSITION, self.process_position_event)
 
-    #初始化RQData客户端：从vt_setting.json中读取RQData的账户、密码到rq_client.init()函数进行初始化
     def init_rqdata(self):
         """
         Init RQData client.
@@ -136,14 +131,20 @@ class CtaEngine(BaseEngine):
         if result:
             self.write_log("RQData数据接口初始化成功")
 
-    #RQData载入实盘数据：输入vt_symbol后，首先会转换成符合RQData格式的rq_symbol，通过get_price()函数下载数据，并且插入到数据库中。
-    def query_bar_from_rq(self, symbol: str, exchange: Exchange, interval: Interval, start: datetime, end: datetime):
+    def query_bar_from_rq(
+        self, symbol: str, exchange: Exchange, interval: Interval, start: datetime, end: datetime
+    ):
         """
         Query bar data from RQData.
         """
-        data = rqdata_client.query_bar(
-            symbol, exchange, interval, start, end
+        req = HistoryRequest(
+            symbol=symbol,
+            exchange=exchange,
+            interval=interval,
+            start=start,
+            end=end
         )
+        data = rqdata_client.query_history(req)
         return data
 
     def process_tick_event(self, event: Event):
@@ -186,7 +187,7 @@ class CtaEngine(BaseEngine):
                 stop_orderid=order.vt_orderid,
                 strategy_name=strategy.strategy_name,
                 status=STOP_STATUS_MAP[order.status],
-                vt_orderid=order.vt_orderid,
+                vt_orderids=[order.vt_orderid],
             )
             self.call_strategy_func(strategy, strategy.on_stop_order, so)  
 
@@ -197,18 +198,29 @@ class CtaEngine(BaseEngine):
         """"""
         trade = event.data
 
+        # Filter duplicate trade push
+        if trade.vt_tradeid in self.vt_tradeids:
+            return
+        self.vt_tradeids.add(trade.vt_tradeid)
+
         self.offset_converter.update_trade(trade)
 
         strategy = self.orderid_strategy_map.get(trade.vt_orderid, None)
         if not strategy:
             return
 
+        # Update strategy pos before calling on_trade method
         if trade.direction == Direction.LONG:
             strategy.pos += trade.volume
         else:
             strategy.pos -= trade.volume
 
         self.call_strategy_func(strategy, strategy.on_trade, trade)
+
+        # Sync strategy variables to data file
+        self.sync_strategy_data(strategy)
+
+        # Update GUI
         self.put_strategy_event(strategy)
 
     def process_position_event(self, event: Event):
@@ -277,7 +289,17 @@ class CtaEngine(BaseEngine):
                     )
                     self.put_stop_order_event(stop_order)
 
-    def send_server_order(self,strategy: CtaTemplate,contract: ContractData,direction: Direction,offset: Offset,price: float,volume: float,type: OrderType,lock: bool):
+    def send_server_order(
+        self,
+        strategy: CtaTemplate,
+        contract: ContractData,
+        direction: Direction,
+        offset: Offset,
+        price: float,
+        volume: float,
+        type: OrderType,
+        lock: bool
+    ):
         """
         Send a new order to server.
         """
@@ -311,7 +333,16 @@ class CtaEngine(BaseEngine):
 
         return vt_orderids
     
-    def send_limit_order(self,strategy: CtaTemplate,contract: ContractData,direction: Direction,offset: Offset,price: float,volume: float,lock: bool):
+    def send_limit_order(
+        self,
+        strategy: CtaTemplate,
+        contract: ContractData,
+        direction: Direction,
+        offset: Offset,
+        price: float,
+        volume: float,
+        lock: bool
+    ):
         """
         Send a limit order to server.
         """
@@ -439,7 +470,11 @@ class CtaEngine(BaseEngine):
         if not contract:
             self.write_log(f"委托失败，找不到合约：{strategy.vt_symbol}", strategy)
             return ""
-
+        
+        # Round order price and volume to nearest incremental value
+        price = round_to(price, contract.pricetick)
+        volume = round_to(volume, contract.min_volume)
+        
         if stop:
             if contract.stop_supported:
                 return self.send_server_stop_order(strategy, contract, direction, offset, price, volume, lock)
@@ -536,22 +571,20 @@ class CtaEngine(BaseEngine):
             msg = f"触发异常已停止\n{traceback.format_exc()}"
             self.write_log(msg, strategy)
 
-    #创建策略实例
-    def add_strategy(self, class_name: str, strategy_name: str, vt_symbol: str, setting: dict):
+    def add_strategy(
+        self, class_name: str, strategy_name: str, vt_symbol: str, setting: dict
+    ):
         """
         Add a new strategy.
-        创建策略流程如下：
-            1、检查策略实例重名
-            2、添加策略配置信息(strategy_name, vt_symbol, setting)到strategies字典上
-            3、添加该策略要订阅行情的合约信息到symbol_strategy_map字典中；
-            4、把策略配置信息保存到json文件内；
-            5、在图形化界面更新状态信息。
         """
         if strategy_name in self.strategies:
             self.write_log(f"创建策略失败，存在重名{strategy_name}")
             return
 
-        strategy_class = self.classes[class_name]
+        strategy_class = self.classes.get(class_name, None)
+        if not strategy_class:
+            self.write_log(f"创建策略失败，找不到策略类{class_name}")
+            return
 
         strategy = strategy_class(self, strategy_name, vt_symbol, setting)
         self.strategies[strategy_name] = strategy
@@ -574,14 +607,10 @@ class CtaEngine(BaseEngine):
         if not self.init_thread:
             self.init_thread = Thread(target=self._init_strategy)
             self.init_thread.start()
-    #初始化策略
+
     def _init_strategy(self):
         """
         Init strategies in queue.
-            1、调用策略类的on_init()回调函数,并且载入历史数据；
-            2、恢复上次退出之前的策略状态；
-            3、调用接口的subcribe()函数订阅指定行情信息；
-            4、策略初始化状态变成True，并且更新到日志上。
         """
         while not self.init_queue.empty():
             strategy_name = self.init_queue.get()
@@ -620,15 +649,9 @@ class CtaEngine(BaseEngine):
         
         self.init_thread = None
 
-
-    #启动策略
     def start_strategy(self, strategy_name: str):
         """
         Start a strategy.
-            检查策略初始化状态；
-                1、检查策略启动状态，避免重复启动；
-                2、调用策略类的on_start()函数启动策略；
-                3、策略启动状态变成True，并且更新到图形化界面上。
         """
         strategy = self.strategies[strategy_name]
         if not strategy.inited:
@@ -643,15 +666,10 @@ class CtaEngine(BaseEngine):
         strategy.trading = True
 
         self.put_strategy_event(strategy)
-    #停止策略
+
     def stop_strategy(self, strategy_name: str):
         """
         Stop a strategy.
-            检查策略启动状态；
-                1、调用策略类的on_stop()函数停止策略；
-                2、更新策略启动状态为False；
-                3、对所有为成交的委托（市价单/限价单/本地停止单）进行撤单操作；
-                4、在图化界面更新策略状态。
         """
         strategy = self.strategies[strategy_name]
         if not strategy.trading:
@@ -666,16 +684,15 @@ class CtaEngine(BaseEngine):
         # Cancel all orders of the strategy
         self.cancel_all(strategy)
 
+        # Sync strategy variables to data file
+        self.sync_strategy_data(strategy)
+
         # Update GUI
         self.put_strategy_event(strategy)
 
-    #编辑策略
     def edit_strategy(self, strategy_name: str, setting: dict):
         """
         Edit parameters of a strategy.
-            1、重新配置策略参数字典setting；
-            2、更新参数字典到策略中；
-            3、在图像化界面更新策略状态。
         """
         strategy = self.strategies[strategy_name]
         strategy.update_setting(setting)
@@ -683,15 +700,9 @@ class CtaEngine(BaseEngine):
         self.update_strategy_setting(strategy_name, setting)
         self.put_strategy_event(strategy)
 
-    #移除策略
     def remove_strategy(self, strategy_name: str):
         """
         Remove a strategy.
-            1、检查策略状态，只有停止策略后从可以移除策略；
-            2、从json文件移除策略配置信息(strategy_name, vt_symbol, setting)；
-            3、从symbol_strategy_map字典中移除该策略订阅的合约信息；
-            4、从strategy_orderid_map字典移除活动委托记录；
-            5、从strategies字典移除该策略的相关配置信息。
         """
         strategy = self.strategies[strategy_name]
         if strategy.trading:

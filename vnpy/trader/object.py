@@ -16,8 +16,6 @@ class BaseData:
     """
     Any data object needs a gateway_name as source 
     and should inherit base data.
-    任何数据对象都需要gateway_name作为源
-     并且应该继承基础数据。
     """
 
     gateway_name: str
@@ -30,10 +28,6 @@ class TickData(BaseData):
         * last trade in market
         * orderbook snapshot
         * intraday market statistics.
-    Tick数据包含以下信息：
-         *最后的市场交易
-         *订单快照
-         *盘中市场统计数据。
     """
 
     symbol: str
@@ -42,6 +36,7 @@ class TickData(BaseData):
 
     name: str = ""
     volume: float = 0
+    open_interest: float = 0
     last_price: float = 0
     last_volume: float = 0
     limit_up: float = 0
@@ -85,7 +80,6 @@ class TickData(BaseData):
 class BarData(BaseData):
     """
     Candlestick bar data of a certain trading period.
-    某个交易期的k数据。
     """
 
     symbol: str
@@ -94,6 +88,7 @@ class BarData(BaseData):
 
     interval: Interval = None
     volume: float = 0
+    open_interest: float = 0
     open_price: float = 0
     high_price: float = 0
     low_price: float = 0
@@ -109,7 +104,6 @@ class OrderData(BaseData):
     """
     Order data contains information for tracking lastest status 
     of a specific order.
-    订单数据包含用于跟踪最新状态的信息特定订单
     """
 
     symbol: str
@@ -133,7 +127,6 @@ class OrderData(BaseData):
     def is_active(self):
         """
         Check if the order is active.
-        检查订单是否有效。
         """
         if self.status in ACTIVE_STATUSES:
             return True
@@ -143,7 +136,6 @@ class OrderData(BaseData):
     def create_cancel_request(self):
         """
         Create cancel request object from order.
-        从订单创建取消请求对象。
         """
         req = CancelRequest(
             orderid=self.orderid, symbol=self.symbol, exchange=self.exchange
@@ -156,8 +148,6 @@ class TradeData(BaseData):
     """
     Trade data contains information of a fill of an order. One order
     can have several trade fills.
-    交易数据包含订单填写的信息。 一个订单
-     可以有几笔交易。
     """
 
     symbol: str
@@ -182,7 +172,6 @@ class TradeData(BaseData):
 class PositionData(BaseData):
     """
     Positon data is used for tracking each individual position holding.
-    Positon数据用于跟踪每个持有的个人头寸。
     """
 
     symbol: str
@@ -206,7 +195,6 @@ class AccountData(BaseData):
     """
     Account data contains information about balance, frozen and
     available.
-    帐户数据包含有关余额，冻结和可用。
     """
 
     accountid: str
@@ -224,7 +212,6 @@ class AccountData(BaseData):
 class LogData(BaseData):
     """
     Log data is used for recording log messages on GUI or in log files.
-    日志数据用于在GUI或日志文件中记录日志消息。
     """
 
     msg: str
@@ -239,7 +226,6 @@ class LogData(BaseData):
 class ContractData(BaseData):
     """
     Contract data contains basic information about each contract traded.
-    合同数据包含有关每个交易合约的基本信息。
     """
 
     symbol: str
@@ -252,6 +238,7 @@ class ContractData(BaseData):
     min_volume: float = 1           # minimum trading volume of the contract
     stop_supported: bool = False    # whether server supports stop order
     net_position: bool = False      # whether gateway uses net position volume
+    history_data: bool = False      # whether gateway provides bar history data
 
     option_strike: float = 0
     option_underlying: str = ""     # vt_symbol of underlying contract
@@ -267,7 +254,6 @@ class ContractData(BaseData):
 class SubscribeRequest:
     """
     Request sending to specific gateway for subscribing tick data update.
-    请求发送到特定网关以订阅节目数据更新。
     """
 
     symbol: str
@@ -282,7 +268,6 @@ class SubscribeRequest:
 class OrderRequest:
     """
     Request sending to specific gateway for creating a new order.
-    请求发送到特定网关以创建新订单。
     """
 
     symbol: str
@@ -319,12 +304,28 @@ class OrderRequest:
 class CancelRequest:
     """
     Request sending to specific gateway for canceling an existing order.
-    请求发送到特定网关以取消现有订单。
     """
 
     orderid: str
     symbol: str
     exchange: Exchange
+
+    def __post_init__(self):
+        """"""
+        self.vt_symbol = f"{self.symbol}.{self.exchange.value}"
+
+
+@dataclass
+class HistoryRequest:
+    """
+    Request sending to specific gateway for querying history data.
+    """
+
+    symbol: str
+    exchange: Exchange
+    start: datetime
+    end: datetime = None
+    interval: Interval = None
 
     def __post_init__(self):
         """"""

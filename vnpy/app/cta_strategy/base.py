@@ -1,6 +1,5 @@
 """
 Defines constants and objects used in CtaStrategy App.
-定义CtaStrategy App中使用的常量和对象。
 """
 
 from dataclasses import dataclass, field

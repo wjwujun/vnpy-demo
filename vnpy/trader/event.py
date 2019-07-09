@@ -11,4 +11,3 @@ EVENT_POSITION = "ePosition."
 EVENT_ACCOUNT = "eAccount."
 EVENT_CONTRACT = "eContract."
 EVENT_LOG = "eLog"
-EVENT_ALLCONTRACTS="eAllContracts."   # 全部合约回报事件

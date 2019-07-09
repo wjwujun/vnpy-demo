@@ -12,7 +12,7 @@ from ..engine import (
     EVENT_RECORDER_UPDATE
 )
 
-#行情记录ui
+
 class RecorderManager(QtWidgets.QWidget):
     """"""
 

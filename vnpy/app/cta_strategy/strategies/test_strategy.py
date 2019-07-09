@@ -9,7 +9,7 @@ from vnpy.app.cta_strategy import (
 
 from time import time
 
-#cta策略示例
+
 class TestStrategy(CtaTemplate):
     """"""
     author = "用Python的交易员"

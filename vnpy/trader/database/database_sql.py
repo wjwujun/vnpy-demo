@@ -1,11 +1,7 @@
 """"""
-import symbol
 from datetime import datetime
-from time import sleep
-from typing import *
+from typing import List, Optional, Sequence, Type
 
-from networkx import volume
-from pandas._libs import interval
 from peewee import (
     AutoField,
     CharField,
@@ -60,6 +56,7 @@ def init_postgresql(settings: dict):
 
 
 class ModelBase(Model):
+
     def to_dict(self):
         return self.__data__
 
@@ -79,6 +76,7 @@ def init_models(db: Database, driver: Driver):
         interval: str = CharField()
 
         volume: float = FloatField()
+        open_interest: float = FloatField()
         open_price: float = FloatField()
         high_price: float = FloatField()
         low_price: float = FloatField()
@@ -86,7 +84,7 @@ def init_models(db: Database, driver: Driver):
 
         class Meta:
             database = db
-            indexes = ((("datetime", "interval", "symbol", "exchange"), True),)
+            indexes = ((("symbol", "exchange", "interval", "datetime"), True),)
 
         @staticmethod
         def from_bar(bar: BarData):
@@ -100,6 +98,7 @@ def init_models(db: Database, driver: Driver):
             db_bar.datetime = bar.datetime
             db_bar.interval = bar.interval.value
             db_bar.volume = bar.volume
+            db_bar.open_interest = bar.open_interest
             db_bar.open_price = bar.open_price
             db_bar.high_price = bar.high_price
             db_bar.low_price = bar.low_price
@@ -119,6 +118,7 @@ def init_models(db: Database, driver: Driver):
                 volume=self.volume,
                 open_price=self.open_price,
                 high_price=self.high_price,
+                open_interest=self.open_interest,
                 low_price=self.low_price,
                 close_price=self.close_price,
                 gateway_name="DB",
@@ -137,15 +137,16 @@ def init_models(db: Database, driver: Driver):
                         DbBarData.insert(bar).on_conflict(
                             update=bar,
                             conflict_target=(
-                                DbBarData.datetime,
-                                DbBarData.interval,
                                 DbBarData.symbol,
                                 DbBarData.exchange,
+                                DbBarData.interval,
+                                DbBarData.datetime,
                             ),
                         ).execute()
                 else:
                     for c in chunked(dicts, 50):
-                        DbBarData.insert_many(c).on_conflict_replace().execute()
+                        DbBarData.insert_many(
+                            c).on_conflict_replace().execute()
 
     class DbTickData(ModelBase):
         """
@@ -162,6 +163,7 @@ def init_models(db: Database, driver: Driver):
 
         name: str = CharField()
         volume: float = FloatField()
+        open_interest: float = FloatField()
         last_price: float = FloatField()
         last_volume: float = FloatField()
         limit_up: float = FloatField()
@@ -198,7 +200,7 @@ def init_models(db: Database, driver: Driver):
 
         class Meta:
             database = db
-            indexes = ((("datetime", "symbol", "exchange"), True),)
+            indexes = ((("symbol", "exchange", "datetime"), True),)
 
         @staticmethod
         def from_tick(tick: TickData):
@@ -212,6 +214,7 @@ def init_models(db: Database, driver: Driver):
             db_tick.datetime = tick.datetime
             db_tick.name = tick.name
             db_tick.volume = tick.volume
+            db_tick.open_interest = tick.open_interest
             db_tick.last_price = tick.last_price
             db_tick.last_volume = tick.last_volume
             db_tick.limit_up = tick.limit_up
@@ -259,6 +262,7 @@ def init_models(db: Database, driver: Driver):
                 datetime=self.datetime,
                 name=self.name,
                 volume=self.volume,
+                open_interest=self.open_interest,
                 last_price=self.last_price,
                 last_volume=self.last_volume,
                 limit_up=self.limit_up,
@@ -306,9 +310,9 @@ def init_models(db: Database, driver: Driver):
                         DbTickData.insert(tick).on_conflict(
                             update=tick,
                             conflict_target=(
-                                DbTickData.datetime,
                                 DbTickData.symbol,
                                 DbTickData.exchange,
+                                DbTickData.datetime,
                             ),
                         ).execute()
                 else:
@@ -321,6 +325,7 @@ def init_models(db: Database, driver: Driver):
 
 
 class SqlManager(BaseDatabaseManager):
+
     def __init__(self, class_bar: Type[Model], class_tick: Type[Model]):
         self.class_bar = class_bar
         self.class_tick = class_tick
@@ -335,7 +340,7 @@ class SqlManager(BaseDatabaseManager):
     ) -> Sequence[BarData]:
         s = (
             self.class_bar.select()
-            .where(
+                .where(
                 (self.class_bar.symbol == symbol)
                 & (self.class_bar.exchange == exchange.value)
                 & (self.class_bar.interval == interval.value)
@@ -352,7 +357,7 @@ class SqlManager(BaseDatabaseManager):
     ) -> Sequence[TickData]:
         s = (
             self.class_tick.select()
-            .where(
+                .where(
                 (self.class_tick.symbol == symbol)
                 & (self.class_tick.exchange == exchange.value)
                 & (self.class_tick.datetime >= start)
@@ -364,17 +369,12 @@ class SqlManager(BaseDatabaseManager):
         data = [db_tick.to_tick() for db_tick in s]
         return data
 
-
-    #bar载入到数据库中
     def save_bar_data(self, datas: Sequence[BarData]):
         ds = [self.class_bar.from_bar(i) for i in datas]
         self.class_bar.save_all(ds)
 
-    #tick载入到数据库中
     def save_tick_data(self, datas: Sequence[TickData]):
-
         ds = [self.class_tick.from_tick(i) for i in datas]
-
         self.class_tick.save_all(ds)
 
     def get_newest_bar_data(
@@ -382,7 +382,7 @@ class SqlManager(BaseDatabaseManager):
     ) -> Optional["BarData"]:
         s = (
             self.class_bar.select()
-            .where(
+                .where(
                 (self.class_bar.symbol == symbol)
                 & (self.class_bar.exchange == exchange.value)
                 & (self.class_bar.interval == interval.value)
@@ -399,7 +399,7 @@ class SqlManager(BaseDatabaseManager):
     ) -> Optional["TickData"]:
         s = (
             self.class_tick.select()
-            .where(
+                .where(
                 (self.class_tick.symbol == symbol)
                 & (self.class_tick.exchange == exchange.value)
             )

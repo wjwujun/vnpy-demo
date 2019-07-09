@@ -1,20 +1,23 @@
 from collections import defaultdict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Callable
 from itertools import product
 from functools import lru_cache
+from time import time
 import multiprocessing
+import random
 
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pandas import DataFrame
+from deap import creator, base, tools, algorithms
 
 from vnpy.trader.constant import (Direction, Offset, Exchange, 
                                   Interval, Status)
 from vnpy.trader.database import database_manager
 from vnpy.trader.object import OrderData, TradeData, BarData, TickData
-from vnpy.trader.utility import round_to_pricetick
+from vnpy.trader.utility import round_to
 
 from .base import (
     BacktestingMode,
@@ -26,16 +29,13 @@ from .base import (
 from .template import CtaTemplate
 
 sns.set_style("whitegrid")
+creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+creator.create("Individual", list, fitness=creator.FitnessMax)
 
-#参数优化
+
 class OptimizationSetting:
     """
     Setting for runnning optimization.
-    设置运行优化。
-    参数设置
-        1、设置参数优化区间：如boll_window设置起始值为18，终止值为24，步进为2，这样就得到了[18, 20, 22, 24] 这4个待优化的参数了。
-        2、设置优化目标字段：如夏普比率、盈亏比、总收益率等。
-        3、随机生成参数对组合：使用迭代工具产生参数对组合，然后把参数对组合打包到一个个字典组成的列表中
     """
 
     def __init__(self):
@@ -84,8 +84,17 @@ class OptimizationSetting:
             settings.append(setting)
 
         return settings
+    
+    def generate_setting_ga(self):
+        """""" 
+        settings_ga = []
+        settings = self.generate_setting()     
+        for d in settings:            
+            param = [tuple(i) for i in d.items()]
+            settings_ga.append(param)
+        return settings_ga
 
-#回测引擎ctaBacktesting.py
+
 class BacktestingEngine:
     """"""
 
@@ -191,34 +200,64 @@ class BacktestingEngine:
         if mode:
             self.mode = mode
 
-    #加载策略
     def add_strategy(self, strategy_class: type, setting: dict):
-        """
-                把CTA策略逻辑，对应合约品种，以及参数设置（可在策略文件外修改）载入到回测引擎中。
-        """
+        """"""
         self.strategy_class = strategy_class
         self.strategy = strategy_class(
             self, strategy_class.__name__, self.vt_symbol, setting
         )
 
-    #载入历史数据
     def load_data(self):
-        """
-        负责载入对应品种的历史数据，大概有4个步骤：
-            1、根据数据类型不同，分成K线模式和Tick模式；
-            2、通过select().where()方法，有条件地从数据库中选取数据，其筛选标准包括：vt_symbol、 回测开始日期、回测结束日期、K线周期（K线模式下）；
-            3、order_by(DbBarData.datetime)表示需要按照时间顺序载入数据；
-            4、载入数据是以迭代方式进行的，数据最终存入self.history_data。
-        """
+        """"""
         self.output("开始加载历史数据")
 
-        if self.mode == BacktestingMode.BAR:
-            self.history_data = load_bar_data(self.symbol,self.exchange,self.interval,self.start,self.end)
-        else:
-            self.history_data = load_tick_data(self.symbol,self.exchange,self.start,self.end)
+        if not self.end:
+            self.end = datetime.now()
 
+        if self.start >= self.end:
+            self.output("起始日期必须小于结束日期")    
+            return        
+
+        self.history_data.clear()       # Clear previously loaded history data
+
+        # Load 30 days of data each time and allow for progress update
+        progress_delta = timedelta(days=30)
+        total_delta = self.end - self.start
+
+        start = self.start
+        end = self.start + progress_delta
+        progress = 0
+
+        while start < self.end:
+            end = min(end, self.end)  # Make sure end time stays within set range
+            
+            if self.mode == BacktestingMode.BAR:
+                data = load_bar_data(
+                    self.symbol,
+                    self.exchange,
+                    self.interval,
+                    start,
+                    end
+                )
+            else:
+                data = load_tick_data(
+                    self.symbol,
+                    self.exchange,
+                    start,
+                    end
+                )
+
+            self.history_data.extend(data)
+            
+            progress += progress_delta / total_delta
+            progress = min(progress, 1)
+            progress_bar = "#" * int(progress * 10)
+            self.output(f"加载进度：{progress_bar} [{progress:.0%}]")
+            
+            start = end
+            end += progress_delta
+        
         self.output(f"历史数据加载完成，数据量：{len(self.history_data)}")
-
 
     def run_backtesting(self):
         """"""
@@ -231,6 +270,8 @@ class BacktestingEngine:
 
         # Use the first [days] of history data for initializing strategy
         day_count = 0
+        ix = 0
+        
         for ix, data in enumerate(self.history_data):
             if self.datetime and data.datetime.day != self.datetime.day:
                 day_count += 1
@@ -291,16 +332,15 @@ class BacktestingEngine:
         self.output("逐日盯市盈亏计算完成")
         return self.daily_df
 
-    #计算策略统计指标
     def calculate_statistics(self, df: DataFrame = None, output=True):
-        """
-            calculate_statistics函数是基于逐日盯市盈亏情况（DateFrame格式）来计算衍生指标，如最大回撤、年化收益、盈亏比、夏普比率等。
-        """
+        """"""
         self.output("开始计算策略统计指标")
 
-        if not df:
+        # Check DataFrame input exterior
+        if df is None:
             df = self.daily_df
         
+        # Check for init DataFrame 
         if df is None:
             # Set all statistics to 0 if no trade.
             start_date = ""
@@ -441,18 +481,14 @@ class BacktestingEngine:
         }
 
         return statistics
-    #统计指标绘图
+
     def show_chart(self, df: DataFrame = None):
-        """
-            通过matplotlib绘制4幅图：
-                1、资金曲线图
-                2、资金回撤图
-                3、每日盈亏图
-                4、每日盈亏分布图
-        """
-        if not df:
+        """"""
+        # Check DataFrame input exterior        
+        if df is None:
             df = self.daily_df
-        
+
+        # Check for init DataFrame        
         if df is None:
             return
 
@@ -526,6 +562,132 @@ class BacktestingEngine:
 
         return result_values
 
+    def run_ga_optimization(self, optimization_setting: OptimizationSetting, population_size=100, ngen_size=30, output=True):
+        """"""
+        # Get optimization setting and target
+        settings = optimization_setting.generate_setting_ga()
+        target_name = optimization_setting.target_name
+
+        if not settings:
+            self.output("优化参数组合为空，请检查")
+            return
+
+        if not target_name:
+            self.output("优化目标未设置，请检查")
+            return
+
+        # Define parameter generation function
+        def generate_parameter():
+            """"""
+            return random.choice(settings)
+        
+        def mutate_individual(individual, indpb):
+            """"""
+            size = len(individual)
+            paramlist = generate_parameter()
+            for i in range(size):
+                if random.random() < indpb:
+                    individual[i] = paramlist[i]
+            return individual,
+
+        # Create ga object function
+        global ga_target_name
+        global ga_strategy_class
+        global ga_setting
+        global ga_vt_symbol
+        global ga_interval
+        global ga_start
+        global ga_rate
+        global ga_slippage
+        global ga_size
+        global ga_pricetick
+        global ga_capital
+        global ga_end
+        global ga_mode
+
+        ga_target_name = target_name
+        ga_strategy_class = self.strategy_class
+        ga_setting = settings[0]
+        ga_vt_symbol = self.vt_symbol
+        ga_interval = self.interval
+        ga_start = self.start
+        ga_rate = self.rate
+        ga_slippage = self.slippage
+        ga_size = self.size
+        ga_pricetick = self.pricetick
+        ga_capital = self.capital
+        ga_end = self.end
+        ga_mode = self.mode
+
+        # Set up genetic algorithem
+        toolbox = base.Toolbox() 
+        toolbox.register("individual", tools.initIterate, creator.Individual, generate_parameter)                          
+        toolbox.register("population", tools.initRepeat, list, toolbox.individual)                                            
+        toolbox.register("mate", tools.cxTwoPoint)                                               
+        toolbox.register("mutate", mutate_individual, indpb=1)               
+        toolbox.register("evaluate", ga_optimize)                                                
+        toolbox.register("select", tools.selNSGA2)       
+
+        total_size = len(settings)
+        pop_size = population_size                      # number of individuals in each generation
+        lambda_ = pop_size                              # number of children to produce at each generation
+        mu = int(pop_size * 0.8)                        # number of individuals to select for the next generation
+
+        cxpb = 0.95         # probability that an offspring is produced by crossover    
+        mutpb = 1 - cxpb    # probability that an offspring is produced by mutation
+        ngen = ngen_size    # number of generation
+                
+        pop = toolbox.population(pop_size)      
+        hof = tools.ParetoFront()               # end result of pareto front
+
+        stats = tools.Statistics(lambda ind: ind.fitness.values)
+        np.set_printoptions(suppress=True)
+        stats.register("mean", np.mean, axis=0)
+        stats.register("std", np.std, axis=0)
+        stats.register("min", np.min, axis=0)
+        stats.register("max", np.max, axis=0)
+
+        # Multiprocessing is not supported yet.
+        # pool = multiprocessing.Pool(multiprocessing.cpu_count())
+        # toolbox.register("map", pool.map)
+
+        # Run ga optimization
+        self.output(f"参数优化空间：{total_size}")
+        self.output(f"每代族群总数：{pop_size}")
+        self.output(f"优良筛选个数：{mu}")
+        self.output(f"迭代次数：{ngen}")
+        self.output(f"交叉概率：{cxpb:.0%}")
+        self.output(f"突变概率：{mutpb:.0%}")
+
+        start = time()
+
+        algorithms.eaMuPlusLambda(
+            pop, 
+            toolbox, 
+            mu, 
+            lambda_, 
+            cxpb, 
+            mutpb, 
+            ngen, 
+            stats,
+            halloffame=hof
+        )    
+        
+        end = time()
+        cost = int((end - start))
+
+        self.output(f"遗传算法优化完成，耗时{cost}秒")
+        
+        # Return result list
+        results = []
+
+        for parameter_values in hof:
+            setting = dict(parameter_values)
+            target_value = ga_optimize(parameter_values)[0]
+            results.append((setting, target_value, {}))
+        
+        return results
+
     def update_daily_close(self, price: float):
         """"""
         d = self.datetime.date()
@@ -558,20 +720,9 @@ class BacktestingEngine:
 
         self.update_daily_close(tick.last_price)
 
-    #撮合成交
     def cross_limit_order(self):
         """
         Cross limit order with last bar/tick data.
-        载入CTA策略以及相关历史数据后，策略会根据最新的数据来计算相关指标。若符合条件会生成交易信号，发出具体委托（buy/sell/short/cover），并且在下一根K线成交。
-
-        根据委托类型的不同，回测引擎提供2种撮合成交机制来尽量模仿真实交易环节：
-            1、限价单撮合成交：（以买入方向为例）先确定是否发生成交，成交标准为委托价>= 下一根K线的最低价；然后确定成交价格，成交价格为委托价与下一根K线开盘价的最小值。
-            2、停止单撮合成交：（以买入方向为例）先确定是否发生成交，成交标准为委托价<= 下一根K线的最高价；然后确定成交价格，成交价格为委托价与下一根K线开盘价的最大值。
-        下面展示在引擎中限价单撮合成交的流程：
-            1、确定会撮合成交的价格；
-            2、遍历限价单字典中的所有限价单，推送委托进入未成交队列的更新状态；
-            3、判断成交状态，若出现成交，推送成交数据和委托数据；
-            4、从字典中删除已成交的限价单。
         """
         if self.mode == BacktestingMode.BAR:
             long_cross_price = self.bar.low_price
@@ -686,6 +837,7 @@ class BacktestingEngine:
                 status=Status.ALLTRADED,
                 gateway_name=self.gateway_name,
             )
+            order.datetime = self.datetime
 
             self.limit_orders[order.vt_orderid] = order
 
@@ -751,7 +903,7 @@ class BacktestingEngine:
         lock: bool
     ):
         """"""
-        price = round_to_pricetick(price, self.pricetick)
+        price = round_to(price, self.pricetick)
         if stop:
             vt_orderid = self.send_stop_order(direction, offset, price, volume)
         else:
@@ -804,6 +956,7 @@ class BacktestingEngine:
             status=Status.NOTTRADED,
             gateway_name=self.gateway_name,
         )
+        order.datetime = self.datetime
 
         self.active_limit_orders[order.vt_orderid] = order
         self.limit_orders[order.vt_orderid] = order
@@ -861,6 +1014,12 @@ class BacktestingEngine:
         Send email to default receiver.
         """
         pass
+    
+    def sync_strategy_data(self, strategy: CtaTemplate):
+        """
+        Sync strategy data into json file.
+        """
+        pass
 
     def get_engine_type(self):
         """
@@ -879,6 +1038,24 @@ class BacktestingEngine:
         Output message of backtesting engine.
         """
         print(f"{datetime.now()}\t{msg}")
+
+    def get_all_trades(self):
+        """
+        Return all trade data of current backtesting result.
+        """
+        return list(self.trades.values())
+
+    def get_all_orders(self):
+        """
+        Return all limit order data of current backtesting result.
+        """
+        return list(self.limit_orders.values())
+
+    def get_all_daily_results(self):
+        """
+        Return all daily result data.
+        """
+        return list(self.daily_results.values())
 
 
 class DailyResult:
@@ -909,17 +1086,15 @@ class DailyResult:
         """"""
         self.trades.append(trade)
 
-    #计算策略盈亏情况
-    def calculate_pnl(self,pre_close: float,start_pos: float,size: int,rate: float,slippage: float,):
-        """
-            基于收盘价、当日持仓量、合约规模、滑点、手续费率等计算总盈亏与净盈亏，并且其计算结果以DataFrame格式输出，完成基于逐日盯市盈亏统计。
-
-            下面展示盈亏情况的计算过程
-                1、浮动盈亏 = 持仓量 *（当日收盘价 - 昨日收盘价）* 合约规模
-                2、实际盈亏 = 持仓变化量 * （当时收盘价 - 开仓成交价）* 合约规模
-                3、总盈亏 = 浮动盈亏 + 实际盈亏
-                4、净盈亏 = 总盈亏 - 总手续费 - 总滑点
-        """
+    def calculate_pnl(
+        self,
+        pre_close: float,
+        start_pos: float,
+        size: int,
+        rate: float,
+        slippage: float,
+    ):
+        """"""
         self.pre_close = pre_close
 
         # Holding pnl is the pnl from holding position at day start
@@ -950,18 +1125,27 @@ class DailyResult:
         self.total_pnl = self.trading_pnl + self.holding_pnl
         self.net_pnl = self.total_pnl - self.commission - self.slippage
 
-#参数对组合回测¶
-def optimize(target_name: str,strategy_class: CtaTemplate,setting: dict,vt_symbol: str,interval: Interval,start: datetime,rate: float,slippage: float,size: float,pricetick: float,capital: int,end: datetime,mode: BacktestingMode,):
+
+def optimize(
+    target_name: str,
+    strategy_class: CtaTemplate,
+    setting: dict,
+    vt_symbol: str,
+    interval: Interval,
+    start: datetime,
+    rate: float,
+    slippage: float,
+    size: float,
+    pricetick: float,
+    capital: int,
+    end: datetime,
+    mode: BacktestingMode
+):
     """
     Function for running in multiprocessing.pool
-    多进程优化时，每个进程都会运行optimize函数，输出参数对组合以及目标优化字段的结果。其步骤如下：
-        1、调用回测引擎
-        2、输入回测相关设置
-        3、输入参数对组合到策略中
-        4、运行回测
-        5、返回回测结果，包括：参数对组合、目标优化字段数值、策略统计指标
     """
     engine = BacktestingEngine()
+    
     engine.set_parameters(
         vt_symbol=vt_symbol,
         interval=interval,
@@ -985,7 +1169,35 @@ def optimize(target_name: str,strategy_class: CtaTemplate,setting: dict,vt_symbo
     return (str(setting), target_value, statistics)
 
 
-@lru_cache(maxsize=10)
+@lru_cache(maxsize=1000000)
+def _ga_optimize(parameter_values: tuple):
+    """"""
+    setting = dict(parameter_values)
+
+    result = optimize(
+        ga_target_name,
+        ga_strategy_class,
+        setting,
+        ga_vt_symbol,
+        ga_interval,
+        ga_start,
+        ga_rate,
+        ga_slippage,
+        ga_size,
+        ga_pricetick,
+        ga_capital,
+        ga_end,
+        ga_mode
+    )
+    return (result[1],)
+
+
+def ga_optimize(parameter_values: list):
+    """"""
+    return _ga_optimize(tuple(parameter_values))
+
+
+@lru_cache(maxsize=999)
 def load_bar_data(
     symbol: str,
     exchange: Exchange,
@@ -999,7 +1211,7 @@ def load_bar_data(
     )
 
 
-@lru_cache(maxsize=10)
+@lru_cache(maxsize=999)
 def load_tick_data(
     symbol: str,
     exchange: Exchange,
@@ -1010,3 +1222,19 @@ def load_tick_data(
     return database_manager.load_tick_data(
         symbol, exchange, start, end
     )
+
+
+# GA related global value
+ga_end = None
+ga_mode = None
+ga_target_name = None
+ga_strategy_class = None
+ga_setting = None
+ga_vt_symbol = None
+ga_interval = None
+ga_start = None
+ga_rate = None
+ga_slippage = None
+ga_size = None
+ga_pricetick = None
+ga_capital = None

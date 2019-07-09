@@ -4,10 +4,24 @@ from typing import List
 from rqdatac import init as rqdata_init
 from rqdatac.services.basic import all_instruments as rqdata_all_instruments
 from rqdatac.services.get_price import get_price as rqdata_get_price
+from rqdatac.share.errors import AuthenticationFailed
 
 from .setting import SETTINGS
 from .constant import Exchange, Interval
-from .object import BarData
+from .object import BarData, HistoryRequest
+
+
+INTERVAL_VT2RQ = {
+    Interval.MINUTE: "1m",
+    Interval.HOUR: "60m",
+    Interval.DAILY: "1d",
+}
+
+INTERVAL_ADJUSTMENT_MAP = {
+    Interval.MINUTE: timedelta(minutes=1),
+    Interval.HOUR: timedelta(hours=1),
+    Interval.DAILY: timedelta()         # no need to adjust for daily bar
+}
 
 
 class RqdataClient:
@@ -23,10 +37,14 @@ class RqdataClient:
         self.inited = False
         self.symbols = set()
 
-    def init(self):
+    def init(self, username="", password=""):
         """"""
         if self.inited:
             return True
+
+        if username and password:
+            self.username = username
+            self.password = password
 
         if not self.username or not self.password:
             return False
@@ -38,7 +56,7 @@ class RqdataClient:
             df = rqdata_all_instruments(date=datetime.now())
             for ix, row in df.iterrows():
                 self.symbols.add(row['order_book_id'])
-        except RuntimeError:
+        except (RuntimeError, AuthenticationFailed):
             return False
 
         self.inited = True
@@ -62,6 +80,11 @@ class RqdataClient:
                 if word.isdigit():
                     break
 
+            # Check for index symbol
+            time_str = symbol[count:]
+            if time_str in ["88", "888", "99"]:
+                return symbol
+
             # noinspection PyUnboundLocalVariable
             product = symbol[:count]
             year = symbol[count]
@@ -76,46 +99,56 @@ class RqdataClient:
 
         return rq_symbol
 
-    def query_bar(
-        self,
-        symbol: str,
-        exchange: Exchange,
-        interval: Interval,
-        start: datetime,
-        end: datetime
-    ):
+    def query_history(self, req: HistoryRequest):
         """
-        Query bar data from RQData.
+        Query history bar data from RQData.
         """
+        symbol = req.symbol
+        exchange = req.exchange
+        interval = req.interval
+        start = req.start
+        end = req.end
+
         rq_symbol = self.to_rq_symbol(symbol, exchange)
         if rq_symbol not in self.symbols:
             return None
 
-        end += timedelta(1)     # For querying night trading period data
+        rq_interval = INTERVAL_VT2RQ.get(interval)
+        if not rq_interval:
+            return None
+
+        # For adjust timestamp from bar close point (RQData) to open point (VN Trader)
+        adjustment = INTERVAL_ADJUSTMENT_MAP[interval]
+
+        # For querying night trading period data
+        end += timedelta(1)
 
         df = rqdata_get_price(
             rq_symbol,
-            frequency=interval.value,
+            frequency=rq_interval,
             fields=["open", "high", "low", "close", "volume"],
             start_date=start,
-            end_date=end
+            end_date=end,
+            adjust_type="none"
         )
 
         data: List[BarData] = []
-        for ix, row in df.iterrows():
-            bar = BarData(
-                symbol=symbol,
-                exchange=exchange,
-                interval=interval,
-                datetime=row.name.to_pydatetime(),
-                open_price=row["open"],
-                high_price=row["high"],
-                low_price=row["low"],
-                close_price=row["close"],
-                volume=row["volume"],
-                gateway_name="RQ"
-            )
-            data.append(bar)
+
+        if df is not None:
+            for ix, row in df.iterrows():
+                bar = BarData(
+                    symbol=symbol,
+                    exchange=exchange,
+                    interval=interval,
+                    datetime=row.name.to_pydatetime() - adjustment,
+                    open_price=row["open"],
+                    high_price=row["high"],
+                    low_price=row["low"],
+                    close_price=row["close"],
+                    volume=row["volume"],
+                    gateway_name="RQ"
+                )
+                data.append(bar)
 
         return data
 

@@ -1,7 +1,8 @@
+""""""
+
 from threading import Thread
 from queue import Queue, Empty
 from copy import copy
-from time import sleep
 
 from vnpy.event import Event, EventEngine
 from vnpy.trader.engine import BaseEngine, MainEngine
@@ -21,7 +22,7 @@ APP_NAME = "DataRecorder"
 EVENT_RECORDER_LOG = "eRecorderLog"
 EVENT_RECORDER_UPDATE = "eRecorderUpdate"
 
-#行情记录引擎
+
 class RecorderEngine(BaseEngine):
     """"""
     setting_filename = "data_recorder_setting.json"
@@ -37,6 +38,7 @@ class RecorderEngine(BaseEngine):
         self.tick_recordings = {}
         self.bar_recordings = {}
         self.bar_generators = {}
+
         self.load_setting()
         self.register_event()
         self.start()
@@ -62,24 +64,20 @@ class RecorderEngine(BaseEngine):
             try:
                 task = self.queue.get(timeout=1)
                 task_type, data = task
+
                 if task_type == "tick":
-                    print("tick插入数据库--------------")
-                    print([data])
-                    print(data["datetime"])
-                    sleep(5)
                     database_manager.save_tick_data([data])
                 elif task_type == "bar":
                     database_manager.save_bar_data([data])
 
             except Empty:
-                #self.main_engine.write_log("行情记录模块队列中没有合约")
                 continue
 
     def close(self):
         """"""
         self.active = False
 
-        if self.thread.active():
+        if self.thread.isAlive():
             self.thread.join()
 
     def start(self):
@@ -87,22 +85,17 @@ class RecorderEngine(BaseEngine):
         self.active = True
         self.thread.start()
 
-
-
-
     def add_bar_recording(self, vt_symbol: str):
         """"""
-        print("111111111111111")
-        print(vt_symbol)
         if vt_symbol in self.bar_recordings:
             self.write_log(f"已在K线记录列表中：{vt_symbol}")
             return
-        print("2222222222222")
+
         contract = self.main_engine.get_contract(vt_symbol)
         if not contract:
             self.write_log(f"找不到合约：{vt_symbol}")
             return
-        print("3333333333")
+
         self.bar_recordings[vt_symbol] = {
             "symbol": contract.symbol,
             "exchange": contract.exchange.value,
@@ -179,15 +172,10 @@ class RecorderEngine(BaseEngine):
             bg.update_tick(tick)
 
     def process_contract_event(self, event: Event):
-
         """"""
         contract = event.data
         vt_symbol = contract.vt_symbol
-        # print("===============")
-        # print(contract)
-        # print(vt_symbol)
-        #self.add_tick_recording(vt_symbol)       #添加tick合约信息到本地
-        #self.add_bar_recording(vt_symbol)        #添加bar合约信息到本地配置
+
         if (vt_symbol in self.tick_recordings or vt_symbol in self.bar_recordings):
             self.subscribe(contract)
 

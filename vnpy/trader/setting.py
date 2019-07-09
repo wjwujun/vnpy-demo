@@ -11,7 +11,7 @@ SETTINGS = {
     "font.size": 12,
 
     "log.active": True,
-    "log.level": 20,
+    "log.level": CRITICAL,
     "log.console": True,
     "log.file": True,
 
@@ -25,12 +25,12 @@ SETTINGS = {
     "rqdata.username": "",
     "rqdata.password": "",
 
-    "database.driver": "mysql",  # see database.Driver
-    "database.database": "CTP",  # for sqlite, use this as filepath
-    "database.host": "47.98.136.216",
+    "database.driver": "sqlite",  # see database.Driver
+    "database.database": "database.db",  # for sqlite, use this as filepath
+    "database.host": "localhost",
     "database.port": 3306,
     "database.user": "root",
-    "database.password": "wj@110120_*@mysql",
+    "database.password": "",
     "database.authentication_source": "admin",  # for mongodb
 }
 

@@ -3,7 +3,7 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Sequence
 from copy import copy
 
 from vnpy.event import Event, EventEngine
@@ -15,7 +15,7 @@ from .event import (
     EVENT_ACCOUNT,
     EVENT_CONTRACT,
     EVENT_LOG,
-    EVENT_ALLCONTRACTS)
+)
 from .object import (
     TickData,
     OrderData,
@@ -27,12 +27,13 @@ from .object import (
     OrderRequest,
     CancelRequest,
     SubscribeRequest,
+    HistoryRequest
 )
 
 
 class BaseGateway(ABC):
     """
-    Abstract gateway class for creating gateways connection 
+    Abstract gateway class for creating gateways connection
     to different trading systems.
 
     # How to implement a gateway:
@@ -72,6 +73,9 @@ class BaseGateway(ABC):
     # Fields required in setting dict for connect function.
     default_setting = {}
 
+    # Exchanges supported in the gateway.
+    exchanges = []
+
     def __init__(self, event_engine: EventEngine, gateway_name: str):
         """"""
         self.event_engine = event_engine
@@ -88,8 +92,6 @@ class BaseGateway(ABC):
         """
         Tick event push.
         Tick event of a specific vt_symbol is also pushed.
-        事件推送。
-         还推送了特定vt_symbol的Tick事件。
         """
         self.on_event(EVENT_TICK, tick)
         self.on_event(EVENT_TICK + tick.vt_symbol, tick)
@@ -98,8 +100,6 @@ class BaseGateway(ABC):
         """
         Trade event push.
         Trade event of a specific vt_symbol is also pushed.
-        交易事件推动。
-         还推送了特定vt_symbol的交易事件。
         """
         self.on_event(EVENT_TRADE, trade)
         self.on_event(EVENT_TRADE + trade.vt_symbol, trade)
@@ -108,7 +108,6 @@ class BaseGateway(ABC):
         """
         Order event push.
         Order event of a specific vt_orderid is also pushed.
-        还推送了特定vt_orderid的订单事件。
         """
         self.on_event(EVENT_ORDER, order)
         self.on_event(EVENT_ORDER + order.vt_orderid, order)
@@ -147,15 +146,6 @@ class BaseGateway(ABC):
         """
         log = LogData(msg=msg, gateway_name=self.gateway_name)
         self.on_log(log)
-
-
-    def onAllContracts(self,activateContracts):
-        #行情记录模块
-        """合约基础信息推送"""
-        self.on_event(EVENT_ALLCONTRACTS,activateContracts)
-
-
-
 
     @abstractmethod
     def connect(self, setting: dict):
@@ -217,16 +207,36 @@ class BaseGateway(ABC):
         Cancel an existing order.
         implementation should finish the tasks blow:
         * send request to server
-
-
         """
         pass
+
+    def send_orders(self, reqs: Sequence[OrderRequest]):
+        """
+        Send a batch of orders to server.
+        Use a for loop of send_order function by default. 
+        Reimplement this function if batch order supported on server.
+        """
+        vt_orderids = []
+
+        for req in reqs:
+            vt_orderid = self.send_order(req)
+            vt_orderids.append(vt_orderid)
+
+        return vt_orderids
+
+    def cancel_orders(self, reqs: Sequence[CancelRequest]):
+        """
+        Cancel a batch of orders to server.
+        Use a for loop of cancel_order function by default. 
+        Reimplement this function if batch cancel supported on server.
+        """
+        for req in reqs:
+            self.cancel_order(req)
 
     @abstractmethod
     def query_account(self):
         """
         Query account balance.
-
         """
         pass
 
@@ -234,6 +244,12 @@ class BaseGateway(ABC):
     def query_position(self):
         """
         Query holding positions.
+        """
+        pass
+
+    def query_history(self, req: HistoryRequest):
+        """
+        Query bar history data.
         """
         pass
 

@@ -9,7 +9,7 @@ from vnpy.app.cta_strategy import (
     ArrayManager,
 )
 
-#cta策略示例
+
 class DoubleMaStrategy(CtaTemplate):
     author = "用Python的交易员"
 
