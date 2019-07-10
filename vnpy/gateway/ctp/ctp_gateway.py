@@ -307,8 +307,8 @@ class CtpMdApi(MdApi):
             ask_volume_1=data["AskVolume1"],
             gateway_name=self.gateway_name
         )
-        print("11111111111111111---打印的数据")
-        print(tick)
+        # print("11111111111111111---打印的数据")
+        # print(tick)
         #tick数据推送
         self.gateway.on_tick(tick)
 
@@ -479,10 +479,12 @@ class CtpTdApi(TdApi):
         self.reqQryInstrument({}, self.reqid)
     
     def onRspQryInvestorPosition(self, data: dict, error: dict, reqid: int, last: bool):
-        """"""
+        """
+            持仓信息查询，回调函数
+        """
         if not data:
             return
-        
+
         # Get buffered position object
         key = f"{data['InstrumentID'], data['PosiDirection']}"
         position = self.positions.get(key, None)
@@ -494,7 +496,8 @@ class CtpTdApi(TdApi):
                 gateway_name=self.gateway_name
             )
             self.positions[key] = position
-        
+        print("111111111111111111111111")
+        print(position)
         # For SHFE position data update
         if position.exchange == Exchange.SHFE:
             if data["YdPosition"] and not data["TodayPosition"]:
@@ -531,7 +534,9 @@ class CtpTdApi(TdApi):
             self.positions.clear()
     
     def onRspQryTradingAccount(self, data: dict, error: dict, reqid: int, last: bool):
-        """"""
+        """
+             账户信息，回调函数
+        """
         account = AccountData(
             accountid=data["AccountID"],
             balance=data["Balance"],
@@ -539,7 +544,9 @@ class CtpTdApi(TdApi):
             gateway_name=self.gateway_name
         )
         account.available = data["Available"]
-        
+        print(6666666666666)
+        print(account)
+
         self.gateway.on_account(account)
     
     def onRspQryInstrument(self, data: dict, error: dict, reqid: int, last: bool):
@@ -778,14 +785,15 @@ class CtpTdApi(TdApi):
     
     def query_account(self):
         """
-        Query account balance data.
+            账户信息查询
         """
+
         self.reqid += 1
         self.reqQryTradingAccount({}, self.reqid)
     
     def query_position(self):
         """
-        Query position holding data.
+            持仓信息查询
         """
         if not symbol_exchange_map:
             return

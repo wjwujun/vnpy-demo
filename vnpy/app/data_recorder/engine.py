@@ -65,9 +65,9 @@ class RecorderEngine(BaseEngine):
             try:
                 task = self.queue.get(timeout=1)
                 task_type, data = task
-                print("ddddddddddddddddddddddd")
-                print(task)
-                print(data.symbol)
+                # print("ddddddddddddddddddddddd")
+                # print(task)
+                # print(data.symbol)
                 if(len(str(data.open_price))<9):
                     if task_type == "tick":
                         database_manager.save_tick_data([data])

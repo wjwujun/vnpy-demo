@@ -162,7 +162,8 @@ class CtaEngine(BaseEngine):
            接收到tick数据后的处理方法,
         """
         tick = event.data
-
+        # print("cta中的tick-=====================")
+        # print(event.type)
         strategies = self.symbol_strategy_map[tick.vt_symbol]
         if not strategies:
             return
