@@ -2,6 +2,7 @@
 """
 
 from datetime import datetime
+from time import sleep
 
 from vnpy.api.ctp import (
     MdApi,
@@ -277,7 +278,7 @@ class CtpMdApi(MdApi):
 
     def onRtnDepthMarketData(self, data: dict):
         """
-        Callback of tick data update.
+         订阅行情，回调数据方法
         """
         symbol = data["InstrumentID"]
         exchange = symbol_exchange_map.get(symbol, "")
@@ -306,7 +307,9 @@ class CtpMdApi(MdApi):
             ask_volume_1=data["AskVolume1"],
             gateway_name=self.gateway_name
         )
-        self.gateway.on_tick(tick)  
+        print("11111111111111111---打印的数据")
+        print(tick)
+        self.gateway.on_tick(tick)
 
     def connect(self, address: str, userid: str, password: str, brokerid: int):
         """
@@ -540,7 +543,7 @@ class CtpTdApi(TdApi):
     
     def onRspQryInstrument(self, data: dict, error: dict, reqid: int, last: bool):
         """
-        Callback of instrument query.
+            合约查询回调方法
         """
         product = PRODUCT_CTP2VT.get(data["ProductClass"], None)
         if product:            
