@@ -309,6 +309,7 @@ class CtpMdApi(MdApi):
         )
         print("11111111111111111---打印的数据")
         print(tick)
+        #tick数据推送
         self.gateway.on_tick(tick)
 
     def connect(self, address: str, userid: str, password: str, brokerid: int):
@@ -563,7 +564,7 @@ class CtpTdApi(TdApi):
                 contract.option_type = OPTIONTYPE_CTP2VT.get(data["OptionsType"], None),
                 contract.option_strike = data["StrikePrice"],
                 contract.option_expiry = datetime.strptime(data["ExpireDate"], "%Y%m%d"),
-            
+            #推送合约信息
             self.gateway.on_contract(contract)
             
             symbol_exchange_map[contract.symbol] = contract.exchange
