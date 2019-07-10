@@ -2,6 +2,7 @@
 """
 
 from datetime import datetime
+from time import sleep
 
 from vnpy.api.ctp import (
     MdApi,
@@ -277,7 +278,7 @@ class CtpMdApi(MdApi):
 
     def onRtnDepthMarketData(self, data: dict):
         """
-        Callback of tick data update.
+         订阅行情，回调数据方法
         """
         symbol = data["InstrumentID"]
         exchange = symbol_exchange_map.get(symbol, "")
@@ -306,10 +307,10 @@ class CtpMdApi(MdApi):
             ask_volume_1=data["AskVolume1"],
             gateway_name=self.gateway_name
         )
-        print("111111111111111111111")
+        print("11111111111111111---打印的数据")
         print(tick)
-
-        self.gateway.on_tick(tick)  
+        #tick数据推送
+        self.gateway.on_tick(tick)
 
     def connect(self, address: str, userid: str, password: str, brokerid: int):
         """
@@ -543,7 +544,7 @@ class CtpTdApi(TdApi):
     
     def onRspQryInstrument(self, data: dict, error: dict, reqid: int, last: bool):
         """
-        Callback of instrument query.
+            合约查询回调方法
         """
         product = PRODUCT_CTP2VT.get(data["ProductClass"], None)
         if product:            
@@ -563,7 +564,7 @@ class CtpTdApi(TdApi):
                 contract.option_type = OPTIONTYPE_CTP2VT.get(data["OptionsType"], None),
                 contract.option_strike = data["StrikePrice"],
                 contract.option_expiry = datetime.strptime(data["ExpireDate"], "%Y%m%d"),
-            
+            #推送合约信息
             self.gateway.on_contract(contract)
             
             symbol_exchange_map[contract.symbol] = contract.exchange

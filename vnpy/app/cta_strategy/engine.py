@@ -104,8 +104,9 @@ class CtaEngine(BaseEngine):
 
     def init_engine(self):
         """
+            初始化策略引擎
         """
-        self.init_rqdata()
+        #self.init_rqdata()
         self.load_strategy_class()
         self.load_strategy_setting()
         self.load_strategy_data()
@@ -113,19 +114,28 @@ class CtaEngine(BaseEngine):
         self.write_log("CTA策略引擎初始化成功")
 
     def close(self):
-        """"""
+        """
+            关闭CTA策略全部启动
+        """
         self.stop_all_strategies()
 
     def register_event(self):
-        """"""
+        """
+        注册相关的时间处理函数
+        """
+        #tick数据处理方法
         self.event_engine.register(EVENT_TICK, self.process_tick_event)
+
+        #挂单的处理方法
         self.event_engine.register(EVENT_ORDER, self.process_order_event)
+        #交易的处理方法
         self.event_engine.register(EVENT_TRADE, self.process_trade_event)
+        #持仓数据处理方法
         self.event_engine.register(EVENT_POSITION, self.process_position_event)
 
     def init_rqdata(self):
         """
-        Init RQData client.
+        初始化 RQData client.
         """
         result = rqdata_client.init()
         if result:
@@ -135,7 +145,7 @@ class CtaEngine(BaseEngine):
         self, symbol: str, exchange: Exchange, interval: Interval, start: datetime, end: datetime
     ):
         """
-        Query bar data from RQData.
+            从RQData查询k线数据
         """
         req = HistoryRequest(
             symbol=symbol,
@@ -148,7 +158,9 @@ class CtaEngine(BaseEngine):
         return data
 
     def process_tick_event(self, event: Event):
-        """"""
+        """
+           接收到tick数据后的处理方法,
+        """
         tick = event.data
 
         strategies = self.symbol_strategy_map[tick.vt_symbol]
@@ -162,7 +174,9 @@ class CtaEngine(BaseEngine):
                 self.call_strategy_func(strategy, strategy.on_tick, tick)
 
     def process_order_event(self, event: Event):
-        """"""
+        """
+            挂单的处理方法
+        """
         order = event.data
         
         self.offset_converter.update_order(order)
@@ -195,7 +209,9 @@ class CtaEngine(BaseEngine):
         self.call_strategy_func(strategy, strategy.on_order, order)
 
     def process_trade_event(self, event: Event):
-        """"""
+        """
+        交易的处理方法
+        """
         trade = event.data
 
         # Filter duplicate trade push
@@ -224,7 +240,10 @@ class CtaEngine(BaseEngine):
         self.put_strategy_event(strategy)
 
     def process_position_event(self, event: Event):
-        """"""
+        """
+          #持仓数据处理方法
+        """
+
         position = event.data
 
         self.offset_converter.update_position(position)
@@ -575,7 +594,7 @@ class CtaEngine(BaseEngine):
         self, class_name: str, strategy_name: str, vt_symbol: str, setting: dict
     ):
         """
-        Add a new strategy.
+            添加一个新的cta策略
         """
         if strategy_name in self.strategies:
             self.write_log(f"创建策略失败，存在重名{strategy_name}")
@@ -600,7 +619,7 @@ class CtaEngine(BaseEngine):
 
     def init_strategy(self, strategy_name: str):
         """
-        Init a strategy.
+            初始化某一个初始化策略
         """ 
         self.init_queue.put(strategy_name)
 
@@ -651,7 +670,7 @@ class CtaEngine(BaseEngine):
 
     def start_strategy(self, strategy_name: str):
         """
-        Start a strategy.
+            启动一个cta策略
         """
         strategy = self.strategies[strategy_name]
         if not strategy.inited:
@@ -669,7 +688,7 @@ class CtaEngine(BaseEngine):
 
     def stop_strategy(self, strategy_name: str):
         """
-        Stop a strategy.
+            停止一个cta策略
         """
         strategy = self.strategies[strategy_name]
         if not strategy.trading:
@@ -769,7 +788,7 @@ class CtaEngine(BaseEngine):
 
     def load_strategy_data(self):
         """
-        Load strategy data from json file.
+            从json文件加载策略数据。
         """
         self.strategy_data = load_json(self.data_filename)
 
@@ -811,12 +830,14 @@ class CtaEngine(BaseEngine):
 
     def init_all_strategies(self):
         """
+            CTA策略全部初始化
         """
         for strategy_name in self.strategies.keys():
             self.init_strategy(strategy_name)
 
     def start_all_strategies(self):
         """
+            启动CTA策略全部启动
         """
         for strategy_name in self.strategies.keys():
             self.start_strategy(strategy_name)
@@ -829,7 +850,7 @@ class CtaEngine(BaseEngine):
 
     def load_strategy_setting(self):
         """
-        Load setting file.
+            加载相应名字的策略引擎
         """
         self.strategy_setting = load_json(self.setting_filename)
 
