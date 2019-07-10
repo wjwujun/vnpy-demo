@@ -66,9 +66,13 @@ class RecorderEngine(BaseEngine):
                 task_type, data = task
 
                 if task_type == "tick":
-                    database_manager.save_tick_data([data])
+                    #database_manager.save_tick_data([data])
+                    print("-------------")
+                    print(data)
                 elif task_type == "bar":
-                    database_manager.save_bar_data([data])
+                    #database_manager.save_bar_data([data])
+                    print("++++++++++++++")
+                    print(data)
 
             except Empty:
                 continue
@@ -175,8 +179,7 @@ class RecorderEngine(BaseEngine):
         """"""
         contract = event.data
         vt_symbol = contract.vt_symbol
-        self.add_tick_recording(vt_symbol)       #添加tick合约信息到本地
-        self.add_bar_recording(vt_symbol)        #添加bar合约信息到本地配置
+
         if (vt_symbol in self.tick_recordings or vt_symbol in self.bar_recordings):
             self.subscribe(contract)
 
