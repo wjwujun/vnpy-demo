@@ -89,8 +89,9 @@ def init_models(db: Database, driver: Driver):
 
         @staticmethod
         def from_bar(bar: BarData):
-            """  Generate DbBarData object from BarData.
-
+            """
+                Generate DbBarData object from BarData.
+                給db赋值
             """
             db_bar = DbBarData()
 

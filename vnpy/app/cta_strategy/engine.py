@@ -244,6 +244,8 @@ class CtaEngine(BaseEngine):
         account=event.data
         # print("账户信息查看=================================")
         # print(account)
+        #账户数据插入mysql
+        database_manager.save_tick_data([data])
 
 
 

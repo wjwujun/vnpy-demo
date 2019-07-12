@@ -53,6 +53,13 @@ class BaseDatabaseManager(ABC):
         pass
 
     @abstractmethod
+    def save_account_data(
+        self,
+        datas: Sequence["AccountData"],
+    ):
+        pass
+
+    @abstractmethod
     def get_newest_bar_data(
         self,
         symbol: str,
