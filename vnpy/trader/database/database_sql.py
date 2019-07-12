@@ -30,6 +30,7 @@ def init(driver: Driver, settings: dict):
     assert driver in init_funcs
 
     db = init_funcs[driver](settings)
+    # 调用init_models函数生成model类,将model类添加到db中,然后将两张表返回（DbTickData和DBBarData,将这两张表（类）添加到SqlManager中，生成统一的BaseDatabaseManager
     bar, tick = init_models(db, driver)
     return SqlManager(bar, tick)
 
@@ -64,9 +65,7 @@ class ModelBase(Model):
 def init_models(db: Database, driver: Driver):
     class DbBarData(ModelBase):
         """
-        Candlestick bar data for database storage.
-
-        Index is defined unique with datetime, interval, symbol
+            定义k线表结构和字段
         """
 
         id = AutoField()
@@ -84,12 +83,13 @@ def init_models(db: Database, driver: Driver):
 
         class Meta:
             database = db
+            #制定书库中的索引
             indexes = ((("symbol", "exchange", "interval", "datetime"), True),)
 
         @staticmethod
         def from_bar(bar: BarData):
-            """
-            Generate DbBarData object from BarData.
+            """  Generate DbBarData object from BarData.
+
             """
             db_bar = DbBarData()
 
@@ -150,9 +150,7 @@ def init_models(db: Database, driver: Driver):
 
     class DbTickData(ModelBase):
         """
-        Tick data for database storage.
-
-        Index is defined unique with (datetime, symbol)
+            定义tick数据结构表字段
         """
 
         id = AutoField()
@@ -320,6 +318,7 @@ def init_models(db: Database, driver: Driver):
                         DbTickData.insert_many(c).on_conflict_replace().execute()
 
     db.connect()
+    #创建表
     db.create_tables([DbBarData, DbTickData])
     return DbBarData, DbTickData
 
@@ -330,14 +329,7 @@ class SqlManager(BaseDatabaseManager):
         self.class_bar = class_bar
         self.class_tick = class_tick
 
-    def load_bar_data(
-        self,
-        symbol: str,
-        exchange: Exchange,
-        interval: Interval,
-        start: datetime,
-        end: datetime,
-    ) -> Sequence[BarData]:
+    def load_bar_data(self,symbol: str,exchange: Exchange,interval: Interval,start: datetime,end: datetime,) -> Sequence[BarData]:
         s = (
             self.class_bar.select()
                 .where(
