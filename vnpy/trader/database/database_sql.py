@@ -72,6 +72,7 @@ def init_models(db: Database, driver: Driver):
         symbol: str = CharField()
         exchange: str = CharField()
         datetime: datetime = DateTimeField()
+        name: str = CharField()
         interval: str = CharField()
 
         volume: float = FloatField()
@@ -96,6 +97,7 @@ def init_models(db: Database, driver: Driver):
             db_bar.symbol = bar.symbol
             db_bar.exchange = bar.exchange.value
             db_bar.datetime = bar.datetime
+            db_bar.name = bar.name
             db_bar.interval = bar.interval.value
             db_bar.volume = bar.volume
             db_bar.open_interest = bar.open_interest
@@ -114,6 +116,7 @@ def init_models(db: Database, driver: Driver):
                 symbol=self.symbol,
                 exchange=Exchange(self.exchange),
                 datetime=self.datetime,
+                name=self.name,
                 interval=Interval(self.interval),
                 volume=self.volume,
                 open_price=self.open_price,

@@ -85,7 +85,7 @@ class BarData(BaseData):
     symbol: str
     exchange: Exchange
     datetime: datetime
-
+    name: str = ""
     interval: Interval = None
     volume: float = 0
     open_interest: float = 0

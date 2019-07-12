@@ -549,10 +549,10 @@ class CtpTdApi(TdApi):
             gateway_name=self.gateway_name
         )
         account.available = data["Available"]       #可用资金
-        print(6666666666666)
-        print(account)
-        print(account.available)
-        print(data)
+        # print(6666666666666)
+        # print(account)
+        # print(account.available)
+        # print(data)
 
         self.gateway.on_account(account)
     

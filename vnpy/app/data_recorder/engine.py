@@ -68,11 +68,10 @@ class RecorderEngine(BaseEngine):
                 # print("ddddddddddddddddddddddd")
                 # print(task)
                 # print(data.symbol)
-                if(len(str(data.open_price))<9):
-                    if task_type == "tick":
-                        database_manager.save_tick_data([data])
-                    elif task_type == "bar":
-                        database_manager.save_bar_data([data])
+                if task_type == "tick":
+                    database_manager.save_tick_data([data])
+                elif task_type == "bar":
+                    database_manager.save_bar_data([data])
 
             except Empty:
                 continue
@@ -229,13 +228,21 @@ class RecorderEngine(BaseEngine):
         task = ("bar", copy(bar))
         self.queue.put(task)
 
+    #生成k线
     def get_bar_generator(self, vt_symbol: str):
-        """"""
+        #查看有没有相应的要生的合约的bar对象
         bg = self.bar_generators.get(vt_symbol, None)
-
+        # print("1111111111111")
+        # print(vt_symbol)
+        # print(bg)
+        # 如果没有就生成一个新对象，每次重启的时候都要生成对象
         if not bg:
+            #print("33333333333333")
             bg = BarGenerator(self.record_bar)
             self.bar_generators[vt_symbol] = bg
+
+        #print("==========")
+        #print(bg)
 
         return bg
 
