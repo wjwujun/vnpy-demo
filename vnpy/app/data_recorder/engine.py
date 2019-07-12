@@ -69,11 +69,14 @@ class RecorderEngine(BaseEngine):
                 # print(task)
                 # print(data.symbol)
                 if task_type == "tick":
+                    self.write_log("tick----插入数据库")
                     database_manager.save_tick_data([data])
                 elif task_type == "bar":
+                    self.write_log("bar===插入数据库")
                     database_manager.save_bar_data([data])
 
             except Empty:
+                self.write_log("tick----插入mysql错误")
                 continue
 
     def close(self):
