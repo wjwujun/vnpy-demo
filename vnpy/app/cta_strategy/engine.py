@@ -26,8 +26,8 @@ from vnpy.trader.event import (
     EVENT_TICK, 
     EVENT_ORDER, 
     EVENT_TRADE,
-    EVENT_POSITION
-)
+    EVENT_POSITION,
+    EVENT_ACCOUNT)
 from vnpy.trader.constant import (
     Direction, 
     OrderType, 
@@ -132,6 +132,8 @@ class CtaEngine(BaseEngine):
         self.event_engine.register(EVENT_TRADE, self.process_trade_event)
         #持仓数据处理方法
         self.event_engine.register(EVENT_POSITION, self.process_position_event)
+        #处理账户情况
+        self.event_engine.register(EVENT_ACCOUNT, self.process_account_event)
 
     def init_rqdata(self):
         """
@@ -141,12 +143,8 @@ class CtaEngine(BaseEngine):
         if result:
             self.write_log("RQData数据接口初始化成功")
 
-    def query_bar_from_rq(
-        self, symbol: str, exchange: Exchange, interval: Interval, start: datetime, end: datetime
-    ):
-        """
-            从RQData查询k线数据
-        """
+    #从RQData查询k线数据
+    def query_bar_from_rq(self, symbol: str, exchange: Exchange, interval: Interval, start: datetime, end: datetime):
         req = HistoryRequest(
             symbol=symbol,
             exchange=exchange,
@@ -157,10 +155,8 @@ class CtaEngine(BaseEngine):
         data = rqdata_client.query_history(req)
         return data
 
+    #接收到tick数据后的处理方法,
     def process_tick_event(self, event: Event):
-        """
-           接收到tick数据后的处理方法,
-        """
         tick = event.data
         # print("cta中的tick-=====================")
         # print(event.type)
@@ -174,10 +170,8 @@ class CtaEngine(BaseEngine):
             if strategy.inited:
                 self.call_strategy_func(strategy, strategy.on_tick, tick)
 
+    #挂单的处理方法
     def process_order_event(self, event: Event):
-        """
-            挂单的处理方法
-        """
         order = event.data
         
         self.offset_converter.update_order(order)
@@ -209,10 +203,8 @@ class CtaEngine(BaseEngine):
         # Call strategy on_order function
         self.call_strategy_func(strategy, strategy.on_order, order)
 
+    #交易的处理方法
     def process_trade_event(self, event: Event):
-        """
-        交易的处理方法
-        """
         trade = event.data
 
         # Filter duplicate trade push
@@ -240,14 +232,20 @@ class CtaEngine(BaseEngine):
         # Update GUI
         self.put_strategy_event(strategy)
 
+    # 持仓数据处理方法
     def process_position_event(self, event: Event):
-        """
-          #持仓数据处理方法
-        """
 
         position = event.data
 
         self.offset_converter.update_position(position)
+
+    #账户信息查看
+    def process_account_event(self,event:Event):
+        account=event.data
+        # print("账户信息查看=================================")
+        # print(account)
+
+
 
     def check_stop_order(self, tick: TickData):
         """"""

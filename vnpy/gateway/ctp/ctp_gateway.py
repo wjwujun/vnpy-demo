@@ -538,14 +538,21 @@ class CtpTdApi(TdApi):
              账户信息，回调函数
         """
         account = AccountData(
-            accountid=data["AccountID"],
-            balance=data["Balance"],
-            frozen=data["FrozenMargin"] + data["FrozenCash"] + data["FrozenCommission"],
+            accountid=data["AccountID"],        #账号id
+            balance=data["Balance"],            #期货结算准备金
+            frozen=data["FrozenMargin"] + data["FrozenCash"] + data["FrozenCommission"], #冻结的所有资金
+            frozen_margin=data["FrozenMargin"],     #冻结的保证金
+            frozen_cash = data["FrozenCash"],       #冻结的资金
+            frozen_commission = data["FrozenCommission"],       #冻结的手续费
+            commission = data["Commission"],       #手续费
+            trading_day = data["TradingDay"],       #交易日
             gateway_name=self.gateway_name
         )
-        account.available = data["Available"]
+        account.available = data["Available"]       #可用资金
         print(6666666666666)
         print(account)
+        print(account.available)
+        print(data)
 
         self.gateway.on_account(account)
     

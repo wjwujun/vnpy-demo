@@ -196,12 +196,14 @@ class AccountData(BaseData):
     Account data contains information about balance, frozen and
     available.
     """
-
     accountid: str
-
     balance: float = 0
     frozen: float = 0
-
+    frozen_margin: float = 0
+    frozen_cash: float = 0
+    frozen_commission: float = 0
+    commission:float=0
+    trading_day:float=0
     def __post_init__(self):
         """"""
         self.available = self.balance - self.frozen
