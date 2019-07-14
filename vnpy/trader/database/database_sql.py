@@ -16,7 +16,7 @@ from peewee import (
 )
 
 from vnpy.trader.constant import Exchange, Interval
-from vnpy.trader.object import BarData, TickData
+from vnpy.trader.object import BarData, TickData, AccountData, PositionData
 from vnpy.trader.utility import get_file_path
 from .database import BaseDatabaseManager, Driver
 
@@ -42,6 +42,7 @@ def init_sqlite(settings: dict):
     return db
 
 
+#peewee数据库链接配置
 def init_mysql(settings: dict):
     keys = {"database", "user", "password", "host", "port"}
     settings = {k: v for k, v in settings.items() if k in keys}
@@ -365,13 +366,27 @@ class SqlManager(BaseDatabaseManager):
         data = [db_tick.to_tick() for db_tick in s]
         return data
 
+    # 保存bar数据
     def save_bar_data(self, datas: Sequence[BarData]):
         ds = [self.class_bar.from_bar(i) for i in datas]
         self.class_bar.save_all(ds)
 
+    #保存tick数据
     def save_tick_data(self, datas: Sequence[TickData]):
         ds = [self.class_tick.from_tick(i) for i in datas]
         self.class_tick.save_all(ds)
+        # 完整写法
+        # for i in datas:
+        #     ds = self.class_tick.from_tick(i)
+        #     self.class_tick.save_all(ds)
+
+
+    #保存账户相关数据
+    def save_account_data(self,datas:Sequence[AccountData]):
+        pass
+    #持有相关信息保存进数据库
+    def save_position_data(self,datas:Sequence[PositionData]):
+        pass
 
     def get_newest_bar_data(
         self, symbol: str, exchange: "Exchange", interval: "Interval"

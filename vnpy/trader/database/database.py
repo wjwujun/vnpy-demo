@@ -58,6 +58,12 @@ class BaseDatabaseManager(ABC):
         datas: Sequence["AccountData"],
     ):
         pass
+    @abstractmethod
+    def save_position_data(
+        self,
+        datas: Sequence["PositionData"],
+    ):
+        pass
 
     @abstractmethod
     def get_newest_bar_data(
