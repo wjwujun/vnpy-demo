@@ -33,6 +33,7 @@ ctp_setting = {
 def run_child():
     """
     Running in the child process.
+        home update test
     """
     SETTINGS["log.file"] = True
 
