@@ -5,6 +5,7 @@ import os
 import traceback
 from collections import defaultdict
 from pathlib import Path
+from time import sleep
 from typing import Any, Callable
 from datetime import datetime, timedelta
 from threading import Thread
@@ -242,10 +243,11 @@ class CtaEngine(BaseEngine):
     #账户信息查看
     def process_account_event(self,event:Event):
         account=event.data
-        # print("账户信息查看=================================")
-        # print(account)
+        #print("账户信息查看=================================")
+        #print(account)
         #账户数据插入mysql
-        database_manager.save_tick_data([data])
+        sleep(10)
+        database_manager.save_account_data([account])
 
 
 

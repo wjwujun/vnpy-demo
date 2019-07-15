@@ -31,8 +31,8 @@ def init(driver: Driver, settings: dict):
 
     db = init_funcs[driver](settings)
     # 调用init_models函数生成model类,将model类添加到db中,然后将两张表返回（DbTickData和DBBarData,将这两张表（类）添加到SqlManager中，生成统一的BaseDatabaseManager
-    bar, tick = init_models(db, driver)
-    return SqlManager(bar, tick)
+    bar, tick,account = init_models(db, driver)
+    return SqlManager(bar, tick,account)
 
 
 def init_sqlite(settings: dict):
@@ -153,6 +153,8 @@ def init_models(db: Database, driver: Driver):
                     for c in chunked(dicts, 50):
                         DbBarData.insert_many(
                             c).on_conflict_replace().execute()
+
+
     #tick数据类
     class DbTickData(ModelBase):
         """
@@ -322,187 +324,81 @@ def init_models(db: Database, driver: Driver):
                 else:
                     for c in chunked(dicts, 50):
                         DbTickData.insert_many(c).on_conflict_replace().execute()
+
+
     #账户数据类
     class DbAccountData(ModelBase):
         """
-            定义tick数据结构表字段
+            定义账户数据结构表字段
         """
 
         id = AutoField()
 
-        symbol: str = CharField()
-        exchange: str = CharField()
-        datetime: datetime = DateTimeField()
+        accountid: str = CharField()
+        balance: str = CharField()
+        frozen: str = CharField()
+        frozen_margin: str = CharField()
+        frozen_cash: str = CharField()
+        frozen_commission: str = CharField()
+        commission: str = CharField()
+        trading_day: str = CharField()
+        gateway_name: str = CharField()
 
-        name: str = CharField()
-        volume: float = FloatField()
-        open_interest: float = FloatField()
-        last_price: float = FloatField()
-        last_volume: float = FloatField()
-        limit_up: float = FloatField()
-        limit_down: float = FloatField()
-
-        open_price: float = FloatField()
-        high_price: float = FloatField()
-        low_price: float = FloatField()
-        pre_close: float = FloatField()
-
-        bid_price_1: float = FloatField()
-        bid_price_2: float = FloatField(null=True)
-        bid_price_3: float = FloatField(null=True)
-        bid_price_4: float = FloatField(null=True)
-        bid_price_5: float = FloatField(null=True)
-
-        ask_price_1: float = FloatField()
-        ask_price_2: float = FloatField(null=True)
-        ask_price_3: float = FloatField(null=True)
-        ask_price_4: float = FloatField(null=True)
-        ask_price_5: float = FloatField(null=True)
-
-        bid_volume_1: float = FloatField()
-        bid_volume_2: float = FloatField(null=True)
-        bid_volume_3: float = FloatField(null=True)
-        bid_volume_4: float = FloatField(null=True)
-        bid_volume_5: float = FloatField(null=True)
-
-        ask_volume_1: float = FloatField()
-        ask_volume_2: float = FloatField(null=True)
-        ask_volume_3: float = FloatField(null=True)
-        ask_volume_4: float = FloatField(null=True)
-        ask_volume_5: float = FloatField(null=True)
 
         class Meta:
             database = db
-            indexes = ((("symbol", "exchange", "datetime"), True),)
 
         @staticmethod
-        def from_tick(tick: TickData):
-            """
-            Generate DbTickData object from TickData.
-            """
-            db_tick = DbTickData()
+        def from_account(account: AccountData):
+            db_account = DbAccountData()
 
-            db_tick.symbol = tick.symbol
-            db_tick.exchange = tick.exchange.value
-            db_tick.datetime = tick.datetime
-            db_tick.name = tick.name
-            db_tick.volume = tick.volume
-            db_tick.open_interest = tick.open_interest
-            db_tick.last_price = tick.last_price
-            db_tick.last_volume = tick.last_volume
-            db_tick.limit_up = tick.limit_up
-            db_tick.limit_down = tick.limit_down
-            db_tick.open_price = tick.open_price
-            db_tick.high_price = tick.high_price
-            db_tick.low_price = tick.low_price
-            db_tick.pre_close = tick.pre_close
+            db_account.accountid = account.accountid
+            db_account.balance = account.balance
+            db_account.frozen = account.frozen
+            db_account.frozen_margin = account.frozen_margin
+            db_account.frozen_cash = account.frozen_cash
+            db_account.frozen_commission = account.frozen_commission
+            db_account.commission = account.commission
+            db_account.trading_day = account.trading_day
+            db_account.gateway_name = account.gateway_name
 
-            db_tick.bid_price_1 = tick.bid_price_1
-            db_tick.ask_price_1 = tick.ask_price_1
-            db_tick.bid_volume_1 = tick.bid_volume_1
-            db_tick.ask_volume_1 = tick.ask_volume_1
-
-            if tick.bid_price_2:
-                db_tick.bid_price_2 = tick.bid_price_2
-                db_tick.bid_price_3 = tick.bid_price_3
-                db_tick.bid_price_4 = tick.bid_price_4
-                db_tick.bid_price_5 = tick.bid_price_5
-
-                db_tick.ask_price_2 = tick.ask_price_2
-                db_tick.ask_price_3 = tick.ask_price_3
-                db_tick.ask_price_4 = tick.ask_price_4
-                db_tick.ask_price_5 = tick.ask_price_5
-
-                db_tick.bid_volume_2 = tick.bid_volume_2
-                db_tick.bid_volume_3 = tick.bid_volume_3
-                db_tick.bid_volume_4 = tick.bid_volume_4
-                db_tick.bid_volume_5 = tick.bid_volume_5
-
-                db_tick.ask_volume_2 = tick.ask_volume_2
-                db_tick.ask_volume_3 = tick.ask_volume_3
-                db_tick.ask_volume_4 = tick.ask_volume_4
-                db_tick.ask_volume_5 = tick.ask_volume_5
-
-            return db_tick
+            return db_account
 
         def to_tick(self):
-            """
-            Generate TickData object from DbTickData.
-            """
-            tick = TickData(
-                symbol=self.symbol,
-                exchange=Exchange(self.exchange),
-                datetime=self.datetime,
-                name=self.name,
-                volume=self.volume,
-                open_interest=self.open_interest,
-                last_price=self.last_price,
-                last_volume=self.last_volume,
-                limit_up=self.limit_up,
-                limit_down=self.limit_down,
-                open_price=self.open_price,
-                high_price=self.high_price,
-                low_price=self.low_price,
-                pre_close=self.pre_close,
-                bid_price_1=self.bid_price_1,
-                ask_price_1=self.ask_price_1,
-                bid_volume_1=self.bid_volume_1,
-                ask_volume_1=self.ask_volume_1,
-                gateway_name="DB",
+            account = AccountData(
+                accountid=self.accountid,
+                balance=self.balance,
+                frozen=self.frozen,
+                frozen_margin=self.frozen_margin,
+                frozen_cash=self.frozen_cash,
+                frozen_commission=self.frozen_commission,
+                commission=self.commission,
+                trading_day=self.trading_day,
+                gateway_name=self.gateway_name,
             )
 
-            if self.bid_price_2:
-                tick.bid_price_2 = self.bid_price_2
-                tick.bid_price_3 = self.bid_price_3
-                tick.bid_price_4 = self.bid_price_4
-                tick.bid_price_5 = self.bid_price_5
 
-                tick.ask_price_2 = self.ask_price_2
-                tick.ask_price_3 = self.ask_price_3
-                tick.ask_price_4 = self.ask_price_4
-                tick.ask_price_5 = self.ask_price_5
-
-                tick.bid_volume_2 = self.bid_volume_2
-                tick.bid_volume_3 = self.bid_volume_3
-                tick.bid_volume_4 = self.bid_volume_4
-                tick.bid_volume_5 = self.bid_volume_5
-
-                tick.ask_volume_2 = self.ask_volume_2
-                tick.ask_volume_3 = self.ask_volume_3
-                tick.ask_volume_4 = self.ask_volume_4
-                tick.ask_volume_5 = self.ask_volume_5
-
-            return tick
+            return account
 
         @staticmethod
-        def save_all(objs: List["DbTickData"]):
+        def save_all(objs: List["DbAccountData"]):
             dicts = [i.to_dict() for i in objs]
             with db.atomic():
-                if driver is Driver.POSTGRESQL:
-                    for tick in dicts:
-                        DbTickData.insert(tick).on_conflict(
-                            update=tick,
-                            conflict_target=(
-                                DbTickData.symbol,
-                                DbTickData.exchange,
-                                DbTickData.datetime,
-                            ),
-                        ).execute()
-                else:
-                    for c in chunked(dicts, 50):
-                        DbTickData.insert_many(c).on_conflict_replace().execute()
+                for c in chunked(dicts, 50):
+                    DbAccountData.insert_many(c).on_conflict_replace().execute()
 
     db.connect()
     #创建表
-    db.create_tables([DbBarData, DbTickData])
-    return DbBarData, DbTickData
+    db.create_tables([DbBarData, DbTickData,DbAccountData])
+    return DbBarData, DbTickData,DbAccountData
 
 
 class SqlManager(BaseDatabaseManager):
 
-    def __init__(self, class_bar: Type[Model], class_tick: Type[Model]):
+    def __init__(self, class_bar: Type[Model], class_tick: Type[Model],class_account: Type[Model]):
         self.class_bar = class_bar
         self.class_tick = class_tick
+        self.class_account = class_account
 
     def load_bar_data(self,symbol: str,exchange: Exchange,interval: Interval,start: datetime,end: datetime,) -> Sequence[BarData]:
         s = (
@@ -553,7 +449,12 @@ class SqlManager(BaseDatabaseManager):
 
     #保存账户相关数据
     def save_account_data(self,datas:Sequence[AccountData]):
-        pass
+        ds = [self.class_account.from_account(i) for i in datas]
+        self.class_account.save_all(ds)
+
+
+
+
     #持有相关信息保存进数据库
     def save_position_data(self,datas:Sequence[PositionData]):
         pass
