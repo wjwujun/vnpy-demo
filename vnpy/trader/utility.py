@@ -116,13 +116,13 @@ def round_to(value: float, target: float):
 
 class BarGenerator:
     """
-    For: 
-    1. generating 1 minute bar data from tick data
-    2. generateing x minute bar/x hour bar data from 1 minute data
+    k线生成：
+        1. 从tick数据生成1分钟的条形数据
+        2. 从1分钟数据生成x分钟条/ x小时条数据
 
-    Notice:
-    1. for x minute bar, x must be able to divide 60: 2, 3, 5, 6, 10, 15, 20, 30
-    2. for x hour bar, x can be any number
+    注意:
+        1. 对于x分钟数据，x必须能够分为60：2,3,5,6,10,15,20,30
+        2. 对于x小时数据，x可以为任意数据
     """
 
     def __init__(
@@ -170,6 +170,7 @@ class BarGenerator:
             self.bar = BarData(
                 symbol=tick.symbol,
                 exchange=tick.exchange,
+                name=tick.name,
                 interval=Interval.MINUTE,
                 datetime=tick.datetime,
                 gateway_name=tick.gateway_name,

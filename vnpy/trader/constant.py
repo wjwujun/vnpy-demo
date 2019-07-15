@@ -128,7 +128,7 @@ class Currency(Enum):
 
 class Interval(Enum):
     """
-    Interval of bar data.
+        k线生成，时间控制
     """
     MINUTE = "1m"
     HOUR = "1h"

@@ -2,6 +2,7 @@
 """
 
 from datetime import datetime
+from time import sleep
 
 from vnpy.api.ctp import (
     MdApi,
@@ -277,7 +278,7 @@ class CtpMdApi(MdApi):
 
     def onRtnDepthMarketData(self, data: dict):
         """
-        Callback of tick data update.
+         订阅行情，回调数据方法
         """
         symbol = data["InstrumentID"]
         exchange = symbol_exchange_map.get(symbol, "")
@@ -306,10 +307,10 @@ class CtpMdApi(MdApi):
             ask_volume_1=data["AskVolume1"],
             gateway_name=self.gateway_name
         )
-        print("111111111111111111111")
-        print(tick)
-
-        self.gateway.on_tick(tick)  
+        # print("11111111111111111---打印的数据")
+        # print(tick)
+        #tick数据推送
+        self.gateway.on_tick(tick)
 
     def connect(self, address: str, userid: str, password: str, brokerid: int):
         """
@@ -478,10 +479,12 @@ class CtpTdApi(TdApi):
         self.reqQryInstrument({}, self.reqid)
     
     def onRspQryInvestorPosition(self, data: dict, error: dict, reqid: int, last: bool):
-        """"""
+        """
+            持仓信息查询，回调函数
+        """
         if not data:
             return
-        
+
         # Get buffered position object
         key = f"{data['InstrumentID'], data['PosiDirection']}"
         position = self.positions.get(key, None)
@@ -493,7 +496,8 @@ class CtpTdApi(TdApi):
                 gateway_name=self.gateway_name
             )
             self.positions[key] = position
-        
+        print("111111111111111111111111")
+        print(position)
         # For SHFE position data update
         if position.exchange == Exchange.SHFE:
             if data["YdPosition"] and not data["TodayPosition"]:
@@ -530,20 +534,30 @@ class CtpTdApi(TdApi):
             self.positions.clear()
     
     def onRspQryTradingAccount(self, data: dict, error: dict, reqid: int, last: bool):
-        """"""
+        """
+             账户信息，回调函数
+        """
         account = AccountData(
-            accountid=data["AccountID"],
-            balance=data["Balance"],
-            frozen=data["FrozenMargin"] + data["FrozenCash"] + data["FrozenCommission"],
+            accountid=data["AccountID"],        #账号id
+            balance=data["Balance"],            #期货结算准备金
+            frozen=data["FrozenMargin"] + data["FrozenCash"] + data["FrozenCommission"], #冻结的所有资金
+            frozen_margin=data["FrozenMargin"],     #冻结的保证金
+            frozen_cash = data["FrozenCash"],       #冻结的资金
+            frozen_commission = data["FrozenCommission"],       #冻结的手续费
+            commission = data["Commission"],       #手续费
+            trading_day = data["TradingDay"],       #交易日
             gateway_name=self.gateway_name
         )
-        account.available = data["Available"]
-        
+        account.available = data["Available"]       #可用资金
+        #print(6666666666666)
+        #print(account)
+        # print(account.available)
+        # print(data)
         self.gateway.on_account(account)
     
     def onRspQryInstrument(self, data: dict, error: dict, reqid: int, last: bool):
         """
-        Callback of instrument query.
+            合约查询回调方法
         """
         product = PRODUCT_CTP2VT.get(data["ProductClass"], None)
         if product:            
@@ -563,7 +577,7 @@ class CtpTdApi(TdApi):
                 contract.option_type = OPTIONTYPE_CTP2VT.get(data["OptionsType"], None),
                 contract.option_strike = data["StrikePrice"],
                 contract.option_expiry = datetime.strptime(data["ExpireDate"], "%Y%m%d"),
-            
+            #推送合约信息
             self.gateway.on_contract(contract)
             
             symbol_exchange_map[contract.symbol] = contract.exchange
@@ -777,14 +791,15 @@ class CtpTdApi(TdApi):
     
     def query_account(self):
         """
-        Query account balance data.
+            账户信息查询
         """
+
         self.reqid += 1
         self.reqQryTradingAccount({}, self.reqid)
     
     def query_position(self):
         """
-        Query position holding data.
+            持仓信息查询
         """
         if not symbol_exchange_map:
             return

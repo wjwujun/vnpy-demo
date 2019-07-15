@@ -28,6 +28,8 @@ class CtaManager(QtWidgets.QWidget):
 
         self.main_engine = main_engine
         self.event_engine = event_engine
+        print("*********************")
+        print(APP_NAME)
         self.cta_engine = main_engine.get_engine(APP_NAME)
 
         self.managers = {}
@@ -98,6 +100,8 @@ class CtaManager(QtWidgets.QWidget):
 
     def update_class_combo(self):
         """"""
+        print("+++++++++++++++++++++++++++")
+        print(self.cta_engine.get_all_strategy_class_names())
         self.class_combo.addItems(
             self.cta_engine.get_all_strategy_class_names()
         )
@@ -105,16 +109,18 @@ class CtaManager(QtWidgets.QWidget):
     def register_event(self):
         """"""
         self.signal_strategy.connect(self.process_strategy_event)
-
         self.event_engine.register(
             EVENT_CTA_STRATEGY, self.signal_strategy.emit
         )
 
     def process_strategy_event(self, event):
         """
-        Update strategy status onto its monitor.
+            将策略状态更新到其监视器上
         """
+        print("==========================")
+        print(event.data)
         data = event.data
+
         strategy_name = data["strategy_name"]
 
         if strategy_name in self.managers:
@@ -133,12 +139,25 @@ class CtaManager(QtWidgets.QWidget):
     def add_strategy(self):
         """"""
         class_name = str(self.class_combo.currentText())
+        print("----------------------------------------")
+        print(class_name)
         if not class_name:
             return
 
         parameters = self.cta_engine.get_strategy_class_parameters(class_name)
+        print("获取cta参数获取cta参数获取cta参数获取cta参数获取cta参数获取cta参数")
+        print(parameters)
         editor = SettingEditor(parameters, class_name=class_name)
         n = editor.exec_()
+        print(n)
+        print("0000000000000000000000000000000")
+        aa=editor.get_setting()
+        bb=aa.pop("strategy_name")
+        cc=aa.pop("vt_symbol")
+        print(aa)
+        print(bb)
+        print(cc)
+
 
         if n == editor.Accepted:
             setting = editor.get_setting()

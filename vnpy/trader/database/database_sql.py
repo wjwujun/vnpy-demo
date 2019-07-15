@@ -16,7 +16,7 @@ from peewee import (
 )
 
 from vnpy.trader.constant import Exchange, Interval
-from vnpy.trader.object import BarData, TickData
+from vnpy.trader.object import BarData, TickData, AccountData, PositionData
 from vnpy.trader.utility import get_file_path
 from .database import BaseDatabaseManager, Driver
 
@@ -30,8 +30,9 @@ def init(driver: Driver, settings: dict):
     assert driver in init_funcs
 
     db = init_funcs[driver](settings)
-    bar, tick = init_models(db, driver)
-    return SqlManager(bar, tick)
+    # 调用init_models函数生成model类,将model类添加到db中,然后将两张表返回（DbTickData和DBBarData,将这两张表（类）添加到SqlManager中，生成统一的BaseDatabaseManager
+    bar, tick,account = init_models(db, driver)
+    return SqlManager(bar, tick,account)
 
 
 def init_sqlite(settings: dict):
@@ -41,6 +42,7 @@ def init_sqlite(settings: dict):
     return db
 
 
+#peewee数据库链接配置
 def init_mysql(settings: dict):
     keys = {"database", "user", "password", "host", "port"}
     settings = {k: v for k, v in settings.items() if k in keys}
@@ -62,17 +64,17 @@ class ModelBase(Model):
 
 
 def init_models(db: Database, driver: Driver):
+    #bar数据类
     class DbBarData(ModelBase):
         """
-        Candlestick bar data for database storage.
-
-        Index is defined unique with datetime, interval, symbol
+            定义k线表结构和字段
         """
 
         id = AutoField()
         symbol: str = CharField()
         exchange: str = CharField()
         datetime: datetime = DateTimeField()
+        name: str = CharField()
         interval: str = CharField()
 
         volume: float = FloatField()
@@ -84,18 +86,21 @@ def init_models(db: Database, driver: Driver):
 
         class Meta:
             database = db
+            #制定书库中的索引
             indexes = ((("symbol", "exchange", "interval", "datetime"), True),)
 
         @staticmethod
         def from_bar(bar: BarData):
             """
-            Generate DbBarData object from BarData.
+                Generate DbBarData object from BarData.
+                給db赋值
             """
             db_bar = DbBarData()
 
             db_bar.symbol = bar.symbol
             db_bar.exchange = bar.exchange.value
             db_bar.datetime = bar.datetime
+            db_bar.name = bar.name
             db_bar.interval = bar.interval.value
             db_bar.volume = bar.volume
             db_bar.open_interest = bar.open_interest
@@ -114,6 +119,7 @@ def init_models(db: Database, driver: Driver):
                 symbol=self.symbol,
                 exchange=Exchange(self.exchange),
                 datetime=self.datetime,
+                name=self.name,
                 interval=Interval(self.interval),
                 volume=self.volume,
                 open_price=self.open_price,
@@ -148,11 +154,11 @@ def init_models(db: Database, driver: Driver):
                         DbBarData.insert_many(
                             c).on_conflict_replace().execute()
 
+
+    #tick数据类
     class DbTickData(ModelBase):
         """
-        Tick data for database storage.
-
-        Index is defined unique with (datetime, symbol)
+            定义tick数据结构表字段
         """
 
         id = AutoField()
@@ -319,25 +325,82 @@ def init_models(db: Database, driver: Driver):
                     for c in chunked(dicts, 50):
                         DbTickData.insert_many(c).on_conflict_replace().execute()
 
+
+    #账户数据类
+    class DbAccountData(ModelBase):
+        """
+            定义账户数据结构表字段
+        """
+
+        id = AutoField()
+
+        accountid: str = CharField()
+        balance: str = CharField()
+        frozen: str = CharField()
+        frozen_margin: str = CharField()
+        frozen_cash: str = CharField()
+        frozen_commission: str = CharField()
+        commission: str = CharField()
+        trading_day: str = CharField()
+        gateway_name: str = CharField()
+
+
+        class Meta:
+            database = db
+
+        @staticmethod
+        def from_account(account: AccountData):
+            db_account = DbAccountData()
+
+            db_account.accountid = account.accountid
+            db_account.balance = account.balance
+            db_account.frozen = account.frozen
+            db_account.frozen_margin = account.frozen_margin
+            db_account.frozen_cash = account.frozen_cash
+            db_account.frozen_commission = account.frozen_commission
+            db_account.commission = account.commission
+            db_account.trading_day = account.trading_day
+            db_account.gateway_name = account.gateway_name
+
+            return db_account
+
+        def to_tick(self):
+            account = AccountData(
+                accountid=self.accountid,
+                balance=self.balance,
+                frozen=self.frozen,
+                frozen_margin=self.frozen_margin,
+                frozen_cash=self.frozen_cash,
+                frozen_commission=self.frozen_commission,
+                commission=self.commission,
+                trading_day=self.trading_day,
+                gateway_name=self.gateway_name,
+            )
+
+
+            return account
+
+        @staticmethod
+        def save_all(objs: List["DbAccountData"]):
+            dicts = [i.to_dict() for i in objs]
+            with db.atomic():
+                for c in chunked(dicts, 50):
+                    DbAccountData.insert_many(c).on_conflict_replace().execute()
+
     db.connect()
-    db.create_tables([DbBarData, DbTickData])
-    return DbBarData, DbTickData
+    #创建表
+    db.create_tables([DbBarData, DbTickData,DbAccountData])
+    return DbBarData, DbTickData,DbAccountData
 
 
 class SqlManager(BaseDatabaseManager):
 
-    def __init__(self, class_bar: Type[Model], class_tick: Type[Model]):
+    def __init__(self, class_bar: Type[Model], class_tick: Type[Model],class_account: Type[Model]):
         self.class_bar = class_bar
         self.class_tick = class_tick
+        self.class_account = class_account
 
-    def load_bar_data(
-        self,
-        symbol: str,
-        exchange: Exchange,
-        interval: Interval,
-        start: datetime,
-        end: datetime,
-    ) -> Sequence[BarData]:
+    def load_bar_data(self,symbol: str,exchange: Exchange,interval: Interval,start: datetime,end: datetime,) -> Sequence[BarData]:
         s = (
             self.class_bar.select()
                 .where(
@@ -369,13 +432,32 @@ class SqlManager(BaseDatabaseManager):
         data = [db_tick.to_tick() for db_tick in s]
         return data
 
+    # 保存bar数据
     def save_bar_data(self, datas: Sequence[BarData]):
         ds = [self.class_bar.from_bar(i) for i in datas]
         self.class_bar.save_all(ds)
 
+    #保存tick数据
     def save_tick_data(self, datas: Sequence[TickData]):
         ds = [self.class_tick.from_tick(i) for i in datas]
         self.class_tick.save_all(ds)
+        # 完整写法
+        # for i in datas:
+        #     ds = self.class_tick.from_tick(i)
+        #     self.class_tick.save_all(ds)
+
+
+    #保存账户相关数据
+    def save_account_data(self,datas:Sequence[AccountData]):
+        ds = [self.class_account.from_account(i) for i in datas]
+        self.class_account.save_all(ds)
+
+
+
+
+    #持有相关信息保存进数据库
+    def save_position_data(self,datas:Sequence[PositionData]):
+        pass
 
     def get_newest_bar_data(
         self, symbol: str, exchange: "Exchange", interval: "Interval"

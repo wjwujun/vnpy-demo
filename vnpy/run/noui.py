@@ -42,7 +42,8 @@ def run_child():
     cta_engine = main_engine.add_app(CtaStrategyApp)
     main_engine.write_log("主引擎创建成功")
 
-    main_engine.add_app(DataRecorderApp)
+    data_engine=main_engine.add_app(DataRecorderApp)
+    main_engine.write_log("创建数据记录引擎")
 
 
     log_engine = main_engine.get_engine("log")
@@ -85,9 +86,10 @@ def run_parent():
 
     while True:
         current_time = datetime.now().time()
-        trading = False
+        trading = True
 
-        # Check whether in trading period
+        # 判断当前处于的时间段
+        """
         if (
             (current_time >= DAY_START and current_time <= DAY_END)
             or (current_time >= NIGHT_START)
@@ -95,7 +97,11 @@ def run_parent():
         ):
             trading = True
 
-        # Start child process in trading period
+        if (datetime.today().weekday() == 5  and current_time > NIGHT_END) or datetime.today().weekday() == 6:
+            trading = False
+        """
+
+        # 记录时间则需要启动子进程
         if trading and child_process is None:
             print("启动子进程")
             child_process = multiprocessing.Process(target=run_child)
@@ -111,7 +117,6 @@ def run_parent():
             print("子进程关闭成功")
 
         sleep(5)
-
 
 if __name__ == "__main__":
     run_parent()
