@@ -52,8 +52,8 @@ class OffsetConverter:
         holding = self.get_position_holding(req.vt_symbol)
         holding.update_order_request(req, vt_orderid)
 
+    #查询实际仓位
     def get_position_holding(self, vt_symbol: str):
-        """"""
         holding = self.holdings.get(vt_symbol, None)
         if not holding:
             contract = self.main_engine.get_contract(vt_symbol)
