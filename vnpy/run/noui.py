@@ -43,8 +43,8 @@ def run_child():
     cta_engine = main_engine.add_app(CtaStrategyApp)
     main_engine.write_log("主引擎创建成功")
 
-    data_engine=main_engine.add_app(DataRecorderApp)
-    main_engine.write_log("创建数据记录引擎")
+    #data_engine=main_engine.add_app(DataRecorderApp)
+    #main_engine.write_log("创建数据记录引擎")
 
 
     log_engine = main_engine.get_engine("log")
@@ -54,7 +54,7 @@ def run_child():
     main_engine.connect(ctp_setting, "CTP")
     main_engine.write_log("连接CTP接口")
 
-    #sleep(10)
+    sleep(10)       #必须得等所有合约，保存完了以后才开始策略的初始化，否则，策略初始化比ctp合约保存更快执行，最后导致取出来的合约信息是空，无法订阅行情
 
     cta_engine.init_engine()
     main_engine.write_log("CTA策略初始化完成")

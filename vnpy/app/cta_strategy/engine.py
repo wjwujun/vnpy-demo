@@ -166,8 +166,8 @@ class CtaEngine(BaseEngine):
 
         for strategy in strategies:
             print("接收tick消息的时候-------------")
-            print(strategy)
-            print(strategy.on_tick)
+            # print(strategy)
+            # print(strategy.on_tick)
             print(tick)
 
             if strategy.inited:
@@ -523,9 +523,9 @@ class CtaEngine(BaseEngine):
         """
             调用策略的函数并捕获引发的任何异常。
         """
-        print("向策略推送消息------------------")
-        print(func)
-        print(params)
+        #print("向策略推送消息------------------")
+        # print(func)
+        # print(params)
         try:
             if params:
                 func(params)
@@ -550,10 +550,10 @@ class CtaEngine(BaseEngine):
 
         strategy_class = self.classes.get(class_name, None)
         print("添加一个新的cta策略------------------------")
-        print(strategy_class)
-        print(strategy_name)
-        print(vt_symbol)
-        print(setting)
+        # print(strategy_class)
+        # print(strategy_name)
+        # print(vt_symbol)
+        # print(setting)
         if not strategy_class:
             self.write_log(f"创建策略失败，找不到策略类{class_name}")
             return
@@ -586,10 +586,6 @@ class CtaEngine(BaseEngine):
         while not self.init_queue.empty():
             strategy_name = self.init_queue.get()
             strategy = self.strategies[strategy_name]
-            print("队列里面初始化策略-----------------------")
-            symbol, exchange = extract_vt_symbol(strategy.vt_symbol)
-            print(symbol)
-            print(strategy.vt_symbol)
             if strategy.inited:
                 self.write_log(f"{strategy_name}已经完成初始化，禁止重复操作")
                 continue
@@ -608,19 +604,19 @@ class CtaEngine(BaseEngine):
                         setattr(strategy, name, value)
 
             # 订阅行情
-            #contract = self.main_engine.get_contract(strategy.vt_symbol)
-            # contract = self.main_engine.get_contract(symbol)
-            # print(contract)
-            # if contract:
-            #     req = SubscribeRequest(
-            #         symbol=contract.symbol, exchange=contract.exchange)
-            #     self.main_engine.subscribe(req, contract.gateway_name)
-            # else:
-            #     self.write_log(f"行情订阅失败，找不到合约{strategy.vt_symbol}", strategy)
+            contract = self.main_engine.get_contract(strategy.vt_symbol)
+            print("初始化的时候策略的时候，订阅相关合约+++++++++++++++")
+            print(contract)
+
+            if contract:
+                req = SubscribeRequest(
+                    symbol=contract.symbol, exchange=contract.exchange)
+                self.main_engine.subscribe(req, contract.gateway_name)
+            else:
+                self.write_log(f"行情订阅失败，找不到合约{strategy.vt_symbol}", strategy)
 
             # Put event to update init completed status.
             strategy.inited = True
-            print("在队列里面初始化一个策略+++++++++++++++++++++++++++++")
             self.put_strategy_event(strategy)
             self.write_log(f"{strategy_name}初始化完成")
         
@@ -816,15 +812,15 @@ class CtaEngine(BaseEngine):
 
     def load_strategy_setting(self):
         """
-            加载相应名字的策略
+            从本地策略json文件，加载相应名字的策略
         """
         self.strategy_setting = load_json(self.setting_filename)
-        print("从本地json文件,加载相应名字的策略==================================")
-        print(self.strategy_setting)
+        #print("从本地json文件,加载相应名字的策略==================================")
+        #print(self.strategy_setting)
 
         #获取所有策略的名字
         self.get_all_strategy_class_names()
-        print(self.classes)
+        #print(self.classes)
         #获取策略相应的参数
         #print(self.get_strategy_class_parameters("AtrRsiStrategy"))
         #strategy_class = self.classes["AtrRsiStrategy"]
@@ -879,10 +875,10 @@ class CtaEngine(BaseEngine):
         Put an event to update strategy status.
             推送一个cta事件
         """
-        print("推送cta事件的时候获取，cta参数*************")
+        #print("推送cta事件的时候获取，cta参数*************")
         data = strategy.get_data()
-        print(strategy.get_data())
-        print(strategy.get_parameters())
+        #print(strategy.get_data())
+        #print(strategy.get_parameters())
 
         event = Event(EVENT_CTA_STRATEGY, data)
         self.event_engine.put(event)

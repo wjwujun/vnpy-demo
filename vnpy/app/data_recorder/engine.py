@@ -184,14 +184,18 @@ class RecorderEngine(BaseEngine):
 
     def process_contract_event(self, event: Event):
         """
-            保存合约到本地
+            保存合约到本地,订阅相关的行情
         """
         contract = event.data
+        #print("合约订阅的时候使用的方法---------------")
+        #print(contract)
         vt_symbol = contract.vt_symbol
+        #print(vt_symbol)
 
         #self.add_tick_recording(vt_symbol)       #添加tick合约信息到本地
         #self.add_bar_recording(vt_symbol)        #添加bar合约信息到本地配置
         if (vt_symbol in self.tick_recordings or vt_symbol in self.bar_recordings):
+            #print(vt_symbol)
             self.subscribe(contract)
 
     def write_log(self, msg: str):
@@ -255,4 +259,6 @@ class RecorderEngine(BaseEngine):
             symbol=contract.symbol,
             exchange=contract.exchange
         )
+        #print("行情记录里面的订阅=======")
+        #print(req)
         self.main_engine.subscribe(req, contract.gateway_name)

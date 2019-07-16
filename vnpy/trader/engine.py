@@ -323,7 +323,6 @@ class OmsEngine(BaseEngine):
     """
     Provides order management system function for VN Trader.
     """
-
     def __init__(self, main_engine: MainEngine, event_engine: EventEngine):
         """"""
         super(OmsEngine, self).__init__(main_engine, event_engine, "oms")
@@ -398,9 +397,16 @@ class OmsEngine(BaseEngine):
         self.accounts[account.vt_accountid] = account
 
     def process_contract_event(self, event: Event):
-        """"""
+        """
+
+        """
         contract = event.data
         self.contracts[contract.vt_symbol] = contract
+        # if(len(self.contracts)<10):
+        #     print("++++++++++++++++++++++++++++++++++++++++++++++++++合约信息")
+        #     print(len(self.contracts))
+        #    print(self.contracts)
+
 
     def get_tick(self, vt_symbol):
         """
@@ -434,8 +440,11 @@ class OmsEngine(BaseEngine):
 
     def get_contract(self, vt_symbol):
         """
-        Get contract data by vt_symbol.
+            获取相关合约详情
         """
+        # print("-------------------------合约的相关信息")
+        # print(vt_symbol)
+        # print(self.contracts)
         return self.contracts.get(vt_symbol, None)
 
     def get_all_ticks(self):
