@@ -156,8 +156,8 @@ class CtaEngine(BaseEngine):
     def process_tick_event(self, event: Event):
         tick = event.data
 
-        print("1111111111111111111111")
-        print(self.symbol_strategy_map);
+        # print("1111111111111111111111")
+        # print(self.symbol_strategy_map);
         strategies = self.symbol_strategy_map[tick.vt_symbol]
         if not strategies:
             return
@@ -165,6 +165,11 @@ class CtaEngine(BaseEngine):
         self.check_stop_order(tick)
 
         for strategy in strategies:
+            print("接收tick消息的时候-------------")
+            print(strategy)
+            print(strategy.on_tick)
+            print(tick)
+
             if strategy.inited:
                 self.call_strategy_func(strategy, strategy.on_tick, tick)
 
@@ -226,7 +231,7 @@ class CtaEngine(BaseEngine):
 
         # Sync strategy variables to data file
         self.sync_strategy_data(strategy)
-
+        print("交易的处理方法+++++++++++++++")
         # Update GUI
         self.put_strategy_event(strategy)
 
@@ -518,6 +523,9 @@ class CtaEngine(BaseEngine):
         """
             调用策略的函数并捕获引发的任何异常。
         """
+        print("向策略推送消息------------------")
+        print(func)
+        print(params)
         try:
             if params:
                 func(params)
@@ -541,8 +549,11 @@ class CtaEngine(BaseEngine):
             return
 
         strategy_class = self.classes.get(class_name, None)
-        print("tian添加一个新的cta策略添加一个新的cta策略添加一个新的cta策略添加一个新的cta策略jia----------")
+        print("添加一个新的cta策略------------------------")
         print(strategy_class)
+        print(strategy_name)
+        print(vt_symbol)
+        print(setting)
         if not strategy_class:
             self.write_log(f"创建策略失败，找不到策略类{class_name}")
             return
@@ -556,7 +567,6 @@ class CtaEngine(BaseEngine):
 
         # 修改一个配置文件
         self.update_strategy_setting(strategy_name, setting)
-
         self.put_strategy_event(strategy)
 
     def init_strategy(self, strategy_name: str):
@@ -576,7 +586,10 @@ class CtaEngine(BaseEngine):
         while not self.init_queue.empty():
             strategy_name = self.init_queue.get()
             strategy = self.strategies[strategy_name]
-
+            print("队列里面初始化策略-----------------------")
+            symbol, exchange = extract_vt_symbol(strategy.vt_symbol)
+            print(symbol)
+            print(strategy.vt_symbol)
             if strategy.inited:
                 self.write_log(f"{strategy_name}已经完成初始化，禁止重复操作")
                 continue
@@ -594,17 +607,20 @@ class CtaEngine(BaseEngine):
                     if value:
                         setattr(strategy, name, value)
 
-            # Subscribe market data
-            contract = self.main_engine.get_contract(strategy.vt_symbol)
-            if contract:
-                req = SubscribeRequest(
-                    symbol=contract.symbol, exchange=contract.exchange)
-                self.main_engine.subscribe(req, contract.gateway_name)
-            else:
-                self.write_log(f"行情订阅失败，找不到合约{strategy.vt_symbol}", strategy)
+            # 订阅行情
+            #contract = self.main_engine.get_contract(strategy.vt_symbol)
+            # contract = self.main_engine.get_contract(symbol)
+            # print(contract)
+            # if contract:
+            #     req = SubscribeRequest(
+            #         symbol=contract.symbol, exchange=contract.exchange)
+            #     self.main_engine.subscribe(req, contract.gateway_name)
+            # else:
+            #     self.write_log(f"行情订阅失败，找不到合约{strategy.vt_symbol}", strategy)
 
             # Put event to update init completed status.
             strategy.inited = True
+            print("在队列里面初始化一个策略+++++++++++++++++++++++++++++")
             self.put_strategy_event(strategy)
             self.write_log(f"{strategy_name}初始化完成")
         
@@ -625,7 +641,7 @@ class CtaEngine(BaseEngine):
 
         self.call_strategy_func(strategy, strategy.on_start)
         strategy.trading = True
-
+        print("启动一个cta策略---------------------------")
         self.put_strategy_event(strategy)
 
     def stop_strategy(self, strategy_name: str):
@@ -647,7 +663,7 @@ class CtaEngine(BaseEngine):
 
         # Sync strategy variables to data file
         self.sync_strategy_data(strategy)
-
+        print("停止一个cta策略+++++++++++++++++++++++++")
         # Update GUI
         self.put_strategy_event(strategy)
 
@@ -659,6 +675,7 @@ class CtaEngine(BaseEngine):
         strategy.update_setting(setting)
 
         self.update_strategy_setting(strategy_name, setting)
+        print("修改一个策略里面的参数+++++++++++++++++++++++++")
         self.put_strategy_event(strategy)
 
     def remove_strategy(self, strategy_name: str):
@@ -726,8 +743,8 @@ class CtaEngine(BaseEngine):
                 value = getattr(module, name)
                 if (isinstance(value, type) and issubclass(value, CtaTemplate) and value is not CtaTemplate):
                     self.classes[value.__name__] = value
-                    print("***********************************")
-                    print(self.classes)
+                    # print("***********************************")
+                    # print(self.classes)
         except:  # noqa
             msg = f"策略文件{module_name}加载失败，触发异常：\n{traceback.format_exc()}"
             self.write_log(msg)
@@ -802,30 +819,31 @@ class CtaEngine(BaseEngine):
             加载相应名字的策略
         """
         self.strategy_setting = load_json(self.setting_filename)
-        print("==================================")
-        # print(self.strategy_setting)
+        print("从本地json文件,加载相应名字的策略==================================")
+        print(self.strategy_setting)
 
         #获取所有策略的名字
         self.get_all_strategy_class_names()
+        print(self.classes)
         #获取策略相应的参数
         #print(self.get_strategy_class_parameters("AtrRsiStrategy"))
-        strategy_class = self.classes["AtrRsiStrategy"]
-        print("获取策略相关setting***************************************")
-        print(strategy_class.parameters)
+        #strategy_class = self.classes["AtrRsiStrategy"]
+        #print("获取策略相关setting***************************************")
+        #print(strategy_class.parameters)
 
 
-        if not self.strategy_setting:
-            print("策略添加失败······································")
-            # 添加策略
-            self.add_strategy("AtrRsiStrategy", "AtrRsiStrategy", "SR911",self.get_strategy_class_parameters("AtrRsiStrategy"))
-        else:
-            for strategy_name, strategy_config in self.strategy_setting.items():
-                self.add_strategy(
-                    strategy_config["class_name"],
-                    strategy_name,
-                    strategy_config["vt_symbol"],
-                    strategy_config["setting"]
-                )
+        # if not self.strategy_setting:
+        #     print("策略添加失败······································")
+        #     # 添加策略
+        #     self.add_strategy("AtrRsiStrategy", "AtrRsiStrategy", "SR911",self.get_strategy_class_parameters("AtrRsiStrategy"))
+        # else:
+        for strategy_name, strategy_config in self.strategy_setting.items():
+            self.add_strategy(
+                strategy_config["class_name"],
+                strategy_name,
+                strategy_config["vt_symbol"],
+                strategy_config["setting"]
+            )
     def update_strategy_setting(self, strategy_name: str, setting: dict):
         """
             更新配置文件
@@ -859,8 +877,13 @@ class CtaEngine(BaseEngine):
     def put_strategy_event(self, strategy: CtaTemplate):
         """
         Put an event to update strategy status.
+            推送一个cta事件
         """
+        print("推送cta事件的时候获取，cta参数*************")
         data = strategy.get_data()
+        print(strategy.get_data())
+        print(strategy.get_parameters())
+
         event = Event(EVENT_CTA_STRATEGY, data)
         self.event_engine.put(event)
 
