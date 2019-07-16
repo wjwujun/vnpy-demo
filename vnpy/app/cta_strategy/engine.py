@@ -540,16 +540,16 @@ class CtaEngine(BaseEngine):
 
     def add_strategy(self, class_name: str, strategy_name: str, vt_symbol: str, setting: dict):
         """
-            添加一个新的cta策略
+            从本地初始化一个cta策略，或者添加一个新的
         """
 
+        self.write_log(f"-------------------从本地初始化一个cta策略，或者添加一个新的")
 
         if strategy_name in self.strategies:
             self.write_log(f"创建策略失败，存在重名{strategy_name}")
             return
 
         strategy_class = self.classes.get(class_name, None)
-        print("添加一个新的cta策略------------------------")
         # print(strategy_class)
         # print(strategy_name)
         # print(vt_symbol)
@@ -617,6 +617,7 @@ class CtaEngine(BaseEngine):
 
             # Put event to update init completed status.
             strategy.inited = True
+
             self.put_strategy_event(strategy)
             self.write_log(f"{strategy_name}初始化完成")
         
@@ -626,6 +627,8 @@ class CtaEngine(BaseEngine):
         """
             启动一个cta策略
         """
+        print("11111111111111111111111111111111111111111111111111所有策略名称")
+        print(self.strategies)
         strategy = self.strategies[strategy_name]
         if not strategy.inited:
             self.write_log(f"策略{strategy.strategy_name}启动失败，请先初始化")
@@ -704,22 +707,20 @@ class CtaEngine(BaseEngine):
 
         return True
 
+    #从源码加载策略类
     def load_strategy_class(self):
-        """
-        Load strategy class from source code.
-        """
         path1 = Path(__file__).parent.joinpath("strategies")
 
         self.load_strategy_class_from_folder(
             path1, "vnpy.app.cta_strategy.strategies")
 
         path2 = Path.cwd().joinpath("strategies")
+
+
         self.load_strategy_class_from_folder(path2, "strategies")
 
+    #从某个文件夹加载策略类
     def load_strategy_class_from_folder(self, path: Path, module_name: str = ""):
-        """
-        Load strategy class from certain folder.
-        """
         for dirpath, dirnames, filenames in os.walk(str(path)):
             for filename in filenames:
                 if filename.endswith(".py"):
@@ -727,10 +728,8 @@ class CtaEngine(BaseEngine):
                         [module_name, filename.replace(".py", "")])
                     self.load_strategy_class_from_module(strategy_module_name)
 
+    #获取本地所有cta策略文件，并且存入self.classes
     def load_strategy_class_from_module(self, module_name: str):
-        """
-            获取本地所有cta策略文件，并且存入self.classes
-        """
 
         try:
             module = importlib.import_module(module_name)
@@ -739,42 +738,33 @@ class CtaEngine(BaseEngine):
                 value = getattr(module, name)
                 if (isinstance(value, type) and issubclass(value, CtaTemplate) and value is not CtaTemplate):
                     self.classes[value.__name__] = value
-                    # print("***********************************")
-                    # print(self.classes)
+            #print("***********************************")
+            #print(self.classes)
         except:  # noqa
             msg = f"策略文件{module_name}加载失败，触发异常：\n{traceback.format_exc()}"
             self.write_log(msg)
 
+    #从cta_strategy_data.json文件加载策略数据
     def load_strategy_data(self):
-        """
-            从json文件加载策略数据。
-        """
         self.strategy_data = load_json(self.data_filename)
 
+    #将策略数据同步到cta_strategy_data.json文件中
     def sync_strategy_data(self, strategy: CtaTemplate):
-        """
-        Sync strategy data into json file.
-        """
         data = strategy.get_variables()
-        data.pop("inited")      # Strategy status (inited, trading) should not be synced.
+        data.pop("inited")      # 状态（inited，trading）不应同步。
         data.pop("trading")
 
         self.strategy_data[strategy.strategy_name] = data
         save_json(self.data_filename, self.strategy_data)
 
+    #获取所有cta策略的名字
     def get_all_strategy_class_names(self):
-        """
-            获取所有cta策略的名字
-        """
         #print("获取所有cta策略的名字----------------------++++++++++")
         #print(self.classes.keys())
 
         return list(self.classes.keys())
-
+    #获取cta策略的参数
     def get_strategy_class_parameters(self, class_name: str):
-        """
-            获取cta策略的参数
-        """
         strategy_class = self.classes[class_name]
 
         parameters = {}
@@ -819,7 +809,7 @@ class CtaEngine(BaseEngine):
         #print(self.strategy_setting)
 
         #获取所有策略的名字
-        self.get_all_strategy_class_names()
+        #self.get_all_strategy_class_names()
         #print(self.classes)
         #获取策略相应的参数
         #print(self.get_strategy_class_parameters("AtrRsiStrategy"))

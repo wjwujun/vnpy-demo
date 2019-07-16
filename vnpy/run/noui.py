@@ -60,7 +60,7 @@ def run_child():
     main_engine.write_log("CTA策略初始化完成")
 
     cta_engine.init_all_strategies()
-    #sleep(60)   # Leave enough time to complete strategy initialization
+    sleep(60)   # 留出足够的时间来完成策略初始化
     main_engine.write_log("CTA策略全部初始化")
 
     cta_engine.start_all_strategies()
