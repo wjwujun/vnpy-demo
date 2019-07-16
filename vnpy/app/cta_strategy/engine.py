@@ -748,7 +748,7 @@ class CtaEngine(BaseEngine):
     def load_strategy_data(self):
         self.strategy_data = load_json(self.data_filename)
 
-    #将策略数据同步到cta_strategy_data.json文件中
+    #将策略数据同步到cta_strategy_data.json文件中,在停止cta策略的时候将数据保存到文件中
     def sync_strategy_data(self, strategy: CtaTemplate):
         data = strategy.get_variables()
         data.pop("inited")      # 状态（inited，trading）不应同步。
@@ -819,7 +819,7 @@ class CtaEngine(BaseEngine):
 
 
         # if not self.strategy_setting:
-        #     print("策略添加失败······································")
+        #     print("本地没有策略的时候,初始化策略······································")
         #     # 添加策略
         #     self.add_strategy("AtrRsiStrategy", "AtrRsiStrategy", "SR911",self.get_strategy_class_parameters("AtrRsiStrategy"))
         # else:

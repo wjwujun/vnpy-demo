@@ -267,8 +267,8 @@ class BarGenerator:
 class ArrayManager(object):
     """
     For:
-    1. time series container of bar data
-    2. calculating technical indicator value
+    1. bar数据的时间序列容器
+    2. 计算技术指标值
     """
 
     def __init__(self, size=100):
