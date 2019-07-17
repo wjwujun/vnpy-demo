@@ -1,4 +1,3 @@
-""""""
 from abc import ABC
 from copy import copy
 from typing import Any, Callable
@@ -152,6 +151,13 @@ class CtaTemplate(ABC):
         """
         Send buy order to open a long position.
         """
+        print("--------------策略模板中有开仓")
+        print(Direction.LONG)
+        print(Offset.OPEN)
+        print(price)
+        print(volume)
+        print(stop)
+        print(lock)
         return self.send_order(Direction.LONG, Offset.OPEN, price, volume, stop, lock)
 
     def sell(self, price: float, volume: float, stop: bool = False, lock: bool = False):
@@ -172,12 +178,14 @@ class CtaTemplate(ABC):
         """
         return self.send_order(Direction.LONG, Offset.CLOSE, price, volume, stop, lock)
 
+    #下订单
     def send_order(self,direction: Direction,offset: Offset,price: float,volume: float,stop: bool = False,lock: bool = False):
-        """
-            下订单
-        """
+
+
         if self.trading:
             vt_orderids = self.cta_engine.send_order(self, direction, offset, price, volume, stop, lock)
+            print("------------策略模板中下订单的返回值")
+            print(vt_orderids)
             return vt_orderids
         else:
             return []

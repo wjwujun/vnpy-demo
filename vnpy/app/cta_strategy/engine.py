@@ -356,6 +356,10 @@ class CtaEngine(BaseEngine):
         print("------------------------------下单")
         print(contract)
         print(direction)
+        print(offset)
+        print(price)
+        print(volume)
+        print(lock)
         return self.send_server_order(
             strategy,
             contract,

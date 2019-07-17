@@ -125,8 +125,14 @@ class AtrRsiStrategy(CtaTemplate):
                 # 使用RSI指标的趋势行情时，会在超买超卖区钝化特征，作为开仓信号
                 if self.rsi_value > self.rsi_buy:
                     # 这里为了保证成交，选择超价5个整指数点下单
+                    print("=========策略中开仓，buy")
+                    print(bar.close_price + 5)
+                    print(self.fixed_size)
                     self.buy(bar.close_price + 5, self.fixed_size)
                 elif self.rsi_value < self.rsi_sell:
+                    print("=========策略中开仓，short")
+                    print(bar.close_price-5)
+                    print(self.fixed_size)
                     self.short(bar.close_price - 5, self.fixed_size)
         # 持有多头仓位
         elif self.pos > 0:
