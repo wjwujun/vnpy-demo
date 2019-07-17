@@ -312,7 +312,7 @@ class CtaEngine(BaseEngine):
                         strategy, strategy.on_stop_order, stop_order
                     )
                     self.put_stop_order_event(stop_order)
-
+    #向服务器发送新订单。
     def send_server_order(
         self,strategy: CtaTemplate,contract: ContractData,direction: Direction,
         offset: Offset,price: float,volume: float,type: OrderType,lock: bool):
@@ -337,24 +337,25 @@ class CtaEngine(BaseEngine):
         vt_orderids = []
 
         for req in req_list:
-            vt_orderid = self.main_engine.send_order(
+            vt_orderid = self.main_engine.send_order(   #发送订单
                 req, contract.gateway_name)
             vt_orderids.append(vt_orderid)
 
             self.offset_converter.update_order_request(req, vt_orderid)
             
-            # Save relationship between orderid and strategy.
+            # 保存orderid和策略之间的关系。
             self.orderid_strategy_map[vt_orderid] = strategy
             self.strategy_orderid_map[strategy.strategy_name].add(vt_orderid)
 
         return vt_orderids
-    
+    #向服务器发送限价订单。
     def send_limit_order(
         self,strategy: CtaTemplate,contract: ContractData,direction: Direction,
         offset: Offset,price: float,volume: float,lock: bool):
-        """
-        Send a limit order to server.
-        """
+
+        print("------------------------------下单")
+        print(contract)
+        print(direction)
         return self.send_server_order(
             strategy,
             contract,
@@ -365,18 +366,19 @@ class CtaEngine(BaseEngine):
             OrderType.LIMIT,
             lock
         )
-    
+
+    #向交易所服务器发送停止单
     def send_server_stop_order(
         self,strategy: CtaTemplate,contract: ContractData,direction: Direction,
         offset: Offset,price: float,volume: float,lock: bool):
         """
-        Send a stop order to server.
+        Send a stop order to server.    #向服务器发送停止单
         
-        Should only be used if stop order supported 
+        Should only be used if stop order supported # 仅在支持停止订单时使用     在交易服务器上。
         on the trading server.
         """
         return self.send_server_order(strategy,contract,direction,offset,price,volume,OrderType.STOP,lock)
-
+    #在本地保存一个停止单
     def send_local_stop_order(
         self,strategy: CtaTemplate,direction: Direction,offset: Offset,price: float,volume: float,lock: bool):
         """
@@ -440,9 +442,9 @@ class CtaEngine(BaseEngine):
         self.call_strategy_func(strategy, strategy.on_stop_order, stop_order)
         self.put_stop_order_event(stop_order)
 
+    #下订单
     def send_order(self,strategy: CtaTemplate,direction: Direction,offset: Offset,price: float,volume: float,stop: bool,lock: bool):
-        """
-        """
+
         contract = self.main_engine.get_contract(strategy.vt_symbol)
         if not contract:
             self.write_log(f"委托失败，找不到合约：{strategy.vt_symbol}", strategy)
@@ -523,9 +525,9 @@ class CtaEngine(BaseEngine):
         """
             调用策略的函数并捕获引发的任何异常。
         """
-        #print("向策略推送消息------------------")
-        # print(func)
-        # print(params)
+        print("向策略推送消息------------------")
+        print(func)
+        print(params)
         try:
             if params:
                 func(params)

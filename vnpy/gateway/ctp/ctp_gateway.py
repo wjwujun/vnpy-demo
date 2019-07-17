@@ -458,7 +458,8 @@ class CtpTdApi(TdApi):
             gateway_name=self.gateway_name
         )
         self.gateway.on_order(order)
-        
+        print("========================ctp_gateway,交易委托失败的时候")
+        print(error)
         self.gateway.write_error("交易委托失败", error)
     
     def onRspOrderAction(self, data: dict, error: dict, reqid: int, last: bool):
@@ -496,7 +497,7 @@ class CtpTdApi(TdApi):
                 gateway_name=self.gateway_name
             )
             self.positions[key] = position
-        print("111111111111111111111111")
+        print("111111111111111111111111--------持仓信息回调")
         print(position)
         # For SHFE position data update
         if position.exchange == Exchange.SHFE:

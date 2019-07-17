@@ -172,22 +172,12 @@ class CtaTemplate(ABC):
         """
         return self.send_order(Direction.LONG, Offset.CLOSE, price, volume, stop, lock)
 
-    def send_order(
-        self,
-        direction: Direction,
-        offset: Offset,
-        price: float,
-        volume: float,
-        stop: bool = False,
-        lock: bool = False
-    ):
+    def send_order(self,direction: Direction,offset: Offset,price: float,volume: float,stop: bool = False,lock: bool = False):
         """
-        Send a new order.
+            下订单
         """
         if self.trading:
-            vt_orderids = self.cta_engine.send_order(
-                self, direction, offset, price, volume, stop, lock
-            )
+            vt_orderids = self.cta_engine.send_order(self, direction, offset, price, volume, stop, lock)
             return vt_orderids
         else:
             return []
