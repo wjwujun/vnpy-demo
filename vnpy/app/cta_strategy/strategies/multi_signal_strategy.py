@@ -10,9 +10,14 @@ from vnpy.app.cta_strategy import (
     TargetPosTemplate
 )
 
-
+"""
+    一个多信号组合策略，基于的信号包括：
+    RSI（1分钟）：大于70为多头、低于30为空头
+    CCI（1分钟）：大于10为多头、低于-10为空头
+    MA（5分钟）：快速大于慢速为多头、低于慢速为空头
+"""
 class RsiSignal(CtaSignal):
-    """"""
+    """RSI信号"""
 
     def __init__(self, rsi_window: int, rsi_level: float):
         """Constructor"""
@@ -49,9 +54,11 @@ class RsiSignal(CtaSignal):
         else:
             self.set_signal_pos(0)
 
+########################################################################
+"""双均线信号"""
+
 
 class CciSignal(CtaSignal):
-    """"""
 
     def __init__(self, cci_window: int, cci_level: float):
         """"""
@@ -88,9 +95,9 @@ class CciSignal(CtaSignal):
         else:
             self.set_signal_pos(0)
 
-
+########################################################################
+"""双均线信号"""
 class MaSignal(CtaSignal):
-    """"""
 
     def __init__(self, fast_window: int, slow_window: int):
         """"""
@@ -106,16 +113,19 @@ class MaSignal(CtaSignal):
         """
         Callback of new tick data update.
         """
+
         self.bg.update_tick(tick)
 
     def on_bar(self, bar: BarData):
         """
         Callback of new bar data update.
         """
+
         self.bg.update_bar(bar)
 
     def on_5min_bar(self, bar: BarData):
-        """"""
+        """5分钟K线更新"""
+
         self.am.update_bar(bar)
         if not self.am.inited:
             self.set_signal_pos(0)
@@ -130,12 +140,12 @@ class MaSignal(CtaSignal):
         else:
             self.set_signal_pos(0)
 
-
+########################################################################
 class MultiSignalStrategy(TargetPosTemplate):
     """"""
 
     author = "用Python的交易员"
-
+    # 策略参数
     rsi_window = 14
     rsi_level = 20
     cci_window = 30
@@ -143,7 +153,8 @@ class MultiSignalStrategy(TargetPosTemplate):
     fast_window = 5
     slow_window = 20
 
-    signal_pos = {}
+    # 策略变量
+    signal_pos = {}     # 信号仓位
 
     parameters = ["rsi_window", "rsi_level", "cci_window",
                   "cci_level", "fast_window", "slow_window"]
