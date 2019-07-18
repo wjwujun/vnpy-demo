@@ -488,6 +488,9 @@ class CtpTdApi(TdApi):
 
         # Get buffered position object
         key = f"{data['InstrumentID'], data['PosiDirection']}"
+        # print("111111111111111111111111--------持仓信息回调")
+        # print(data)
+        # print(key)
         position = self.positions.get(key, None)
         if not position:
             position = PositionData(
@@ -497,37 +500,37 @@ class CtpTdApi(TdApi):
                 gateway_name=self.gateway_name
             )
             self.positions[key] = position
-        print("111111111111111111111111--------持仓信息回调")
-        print(position)
+
         # For SHFE position data update
         if position.exchange == Exchange.SHFE:
             if data["YdPosition"] and not data["TodayPosition"]:
                 position.yd_volume = data["Position"]
         # For other exchange position data update
         else:
-            position.yd_volume = data["Position"] - data["TodayPosition"]
+            position.yd_volume = data["Position"] - data["TodayPosition"]       #总持仓-今日持仓
         
         # Get contract size (spread contract has no size value)
+        #   获得合约规模（差价合约没有规模值）
         size = symbol_size_map.get(position.symbol, 0)
         
-        # Calculate previous position cost
+        # Calculate previous position cost 计算以前的头寸成本
         cost = position.price * position.volume * size
         
-        # Update new position volume
-        position.volume += data["Position"]
-        position.pnl += data["PositionProfit"]
+        # Update new position volume  更新新的头寸量
+        position.volume += data["Position"]     #今日持仓
+        position.pnl += data["PositionProfit"]      #持仓盈亏
         
-        # Calculate average position price
+        # Calculate average position price  计算平均头寸价格
         if position.volume and size:
-            cost += data["PositionCost"]
+            cost += data["PositionCost"]            #持仓成本
             position.price = cost / (position.volume * size)
         
-        # Get frozen volume
+        # Get frozen volume     获得冷冻量
         if position.direction == Direction.LONG:
             position.frozen += data["ShortFrozen"]
         else:
             position.frozen += data["LongFrozen"]
-        
+
         if last:
             for position in self.positions.values():
                 self.gateway.on_position(position)
@@ -550,8 +553,8 @@ class CtpTdApi(TdApi):
             gateway_name=self.gateway_name
         )
         account.available = data["Available"]       #可用资金
-        #print(6666666666666)
-        #print(account)
+        print(6666666666666)
+        print(account)
         # print(account.available)
         # print(data)
         self.gateway.on_account(account)

@@ -169,7 +169,9 @@ class CtaEngine(BaseEngine):
             # print(strategy)
             # print(strategy.on_tick)
             print(tick)
-
+            position=self.offset_converter.get_position_holding(tick.vt_symbol)
+            print("-=================收到tick的时候，查询当前的持有情况")
+            print(position.vt_symbol)
             if strategy.inited:
                 self.call_strategy_func(strategy, strategy.on_tick, tick)
 
@@ -239,6 +241,8 @@ class CtaEngine(BaseEngine):
     def process_position_event(self, event: Event):
 
         position = event.data
+        print("-----------------------------策略中持仓信息打印")
+        print(position)
 
         self.offset_converter.update_position(position)
 
@@ -248,7 +252,7 @@ class CtaEngine(BaseEngine):
         #print("账户信息查看=================================")
         #print(account)
         #账户数据插入mysql
-        sleep(10)
+        sleep(60)
         database_manager.save_account_data([account])
 
 

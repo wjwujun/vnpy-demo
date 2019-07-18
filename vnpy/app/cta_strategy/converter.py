@@ -26,6 +26,8 @@ class OffsetConverter:
             return
 
         holding = self.get_position_holding(position.vt_symbol)
+        print("===========================--------------------cta处理持仓信息的时候调用的方法")
+        print(holding)
         holding.update_position(position)
 
     def update_trade(self, trade: TradeData):

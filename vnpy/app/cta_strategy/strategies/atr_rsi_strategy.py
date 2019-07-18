@@ -144,6 +144,9 @@ class AtrRsiStrategy(CtaTemplate):
             long_stop = self.intra_trade_high * \
                 (1 - self.trailing_percent / 100)
             # 发出本地止损委托
+            print("=========================-------------------触发多头止损")
+            print(self.pos)
+            print(long_stop)
             self.sell(long_stop, abs(self.pos), stop=True)
         # 持有空头仓位
         elif self.pos < 0:
@@ -152,6 +155,9 @@ class AtrRsiStrategy(CtaTemplate):
 
             short_stop = self.intra_trade_low * \
                 (1 + self.trailing_percent / 100)
+            print("=========================-------------------触发kong头止损")
+            print(self.pos)
+            print(short_stop)
             self.cover(short_stop, abs(self.pos), stop=True)
         # 发出状态更新事件
         self.put_event()

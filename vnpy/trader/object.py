@@ -172,6 +172,7 @@ class TradeData(BaseData):
 class PositionData(BaseData):
     """
     Positon data is used for tracking each individual position holding.
+    Positon数据用于跟踪每个持有的个人头寸。
     """
 
     symbol: str
