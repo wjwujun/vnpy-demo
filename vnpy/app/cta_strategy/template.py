@@ -184,8 +184,6 @@ class CtaTemplate(ABC):
 
         if self.trading:
             vt_orderids = self.cta_engine.send_order(self, direction, offset, price, volume, stop, lock)
-            print("------------策略模板中下订单的返回值")
-            print(vt_orderids)
             return vt_orderids
         else:
             return []

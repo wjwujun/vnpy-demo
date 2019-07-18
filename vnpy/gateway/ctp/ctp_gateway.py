@@ -731,7 +731,8 @@ class CtpTdApi(TdApi):
         Send new order.
         """
         self.order_ref += 1
-        
+        print("************--------------------------------------ctp中下订单")
+        print(req)
         ctp_req = {
             "InstrumentID": req.symbol,
             "LimitPrice": req.price,
@@ -749,7 +750,8 @@ class CtpTdApi(TdApi):
             "IsAutoSuspend": 0,
             "TimeCondition": THOST_FTDC_TC_GFD,
             "VolumeCondition": THOST_FTDC_VC_AV,
-            "MinVolume": 1
+            "MinVolume": 1,
+            "ExchangeID":req.exchange.value
         }
         
         if req.type == OrderType.FAK:

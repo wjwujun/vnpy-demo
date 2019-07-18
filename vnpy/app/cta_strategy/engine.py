@@ -165,7 +165,7 @@ class CtaEngine(BaseEngine):
         self.check_stop_order(tick)
 
         for strategy in strategies:
-            print("接收tick消息的时候-------------")
+            print("策略引擎，接收tick消息的时候-------------")
             # print(strategy)
             # print(strategy.on_tick)
             print(tick)
@@ -332,7 +332,8 @@ class CtaEngine(BaseEngine):
 
         # Convert with offset converter
         req_list = self.offset_converter.convert_order_request(original_req, lock)
-
+        print("==================向CTP服务器发送请求的时候")
+        print(req_list)
         # Send Orders
         vt_orderids = []
 
@@ -529,9 +530,6 @@ class CtaEngine(BaseEngine):
         """
             调用策略的函数并捕获引发的任何异常。
         """
-        print("向策略推送消息------------------")
-        print(func)
-        print(params)
         try:
             if params:
                 func(params)
@@ -633,8 +631,6 @@ class CtaEngine(BaseEngine):
         """
             启动一个cta策略
         """
-        print("11111111111111111111111111111111111111111111111111所有策略名称")
-        print(self.strategies)
         strategy = self.strategies[strategy_name]
         if not strategy.inited:
             self.write_log(f"策略{strategy.strategy_name}启动失败，请先初始化")
@@ -646,7 +642,6 @@ class CtaEngine(BaseEngine):
 
         self.call_strategy_func(strategy, strategy.on_start)
         strategy.trading = True
-        print("启动一个cta策略---------------------------")
         self.put_strategy_event(strategy)
 
     def stop_strategy(self, strategy_name: str):
