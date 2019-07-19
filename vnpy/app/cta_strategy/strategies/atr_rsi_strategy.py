@@ -91,8 +91,8 @@ class AtrRsiStrategy(CtaTemplate):
         Callback of new tick data update.
         收到行情TICK的回调
         """
-        print("-------------------------策略接收到消息的时候")
-        print(tick)
+        #print("-------------------------策略接收到消息的时候")
+        #print(tick)
         self.bg.update_tick(tick)
 
     def on_bar(self, bar: BarData):

@@ -31,7 +31,7 @@ def init(driver: Driver, settings: dict):
 
     db = init_funcs[driver](settings)
     # 调用init_models函数生成model类,将model类添加到db中,然后将两张表返回（DbTickData和DBBarData,将这两张表（类）添加到SqlManager中，生成统一的BaseDatabaseManager
-    bar, tick,account = init_models(db, driver)
+    bar, tick,account,position = init_models(db, driver)
     return SqlManager(bar, tick,account)
 
 
@@ -364,7 +364,7 @@ def init_models(db: Database, driver: Driver):
 
             return db_account
 
-        def to_tick(self):
+        def to_account(self):
             account = AccountData(
                 accountid=self.accountid,
                 balance=self.balance,
@@ -387,6 +387,68 @@ def init_models(db: Database, driver: Driver):
                 for c in chunked(dicts, 50):
                     DbAccountData.insert_many(c).on_conflict_replace().execute()
 
+    #持仓数据类
+    class DbPositionData(ModelBase):
+        """
+            定义持仓数据
+        """
+
+        id = AutoField()
+
+        symbol: str = CharField()
+        exchange: str = CharField()
+        direction: str = CharField()
+        volume: str = CharField()
+        frozen: str = CharField()
+
+        price: str = CharField()
+        pnl: str = CharField()
+        yd_volume: str = CharField()
+        gateway_name: str = CharField()
+
+
+        class Meta:
+            database = db
+
+        @staticmethod
+        def from_positon(positon: PositionData):
+            db_positon = PositionData()
+
+            db_positon.symbol = positon.symbol
+            db_positon.exchange = positon.exchange
+            db_positon.direction = positon.direction
+            db_positon.volume = positon.volume
+            db_positon.frozen = positon.frozen
+            db_positon.price = positon.price
+            db_positon.pnl = positon.pnl
+            db_positon.yd_volume = positon.yd_volume
+            db_positon.gateway_name = positon.gateway_name
+
+            return db_positon
+
+        def to_positon(self):
+            positon = PositionData(
+                symbol=self.symbol,
+                exchange=self.exchange,
+                direction=self.direction,
+                volume=self.volume,
+                frozen=self.frozen,
+                price=self.price,
+                pnl=self.pnl,
+                yd_volume=self.yd_volume,
+                gateway_name=self.gateway_name,
+            )
+
+
+            return positon
+
+        @staticmethod
+        def save_all(objs: List["PositionData"]):
+            dicts = [i.to_dict() for i in objs]
+            with db.atomic():
+                for c in chunked(dicts, 50):
+                    DbAccountData.insert_many(c).on_conflict_replace().execute()
+
     db.connect()
     #创建表
     db.create_tables([DbBarData, DbTickData,DbAccountData])
@@ -395,10 +457,11 @@ def init_models(db: Database, driver: Driver):
 
 class SqlManager(BaseDatabaseManager):
 
-    def __init__(self, class_bar: Type[Model], class_tick: Type[Model],class_account: Type[Model]):
+    def __init__(self, class_bar: Type[Model], class_tick: Type[Model],class_account: Type[Model],class_position: Type[Model]):
         self.class_bar = class_bar
         self.class_tick = class_tick
         self.class_account = class_account
+        self.class_position = class_position
 
     def load_bar_data(self,symbol: str,exchange: Exchange,interval: Interval,start: datetime,end: datetime,) -> Sequence[BarData]:
         s = (
@@ -457,7 +520,8 @@ class SqlManager(BaseDatabaseManager):
 
     #持有相关信息保存进数据库
     def save_position_data(self,datas:Sequence[PositionData]):
-        pass
+        ds = [self.class_position.from_position(i) for i in datas]
+        self.class_position.save_all(ds)
 
     def get_newest_bar_data(
         self, symbol: str, exchange: "Exchange", interval: "Interval"

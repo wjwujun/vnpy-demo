@@ -165,13 +165,13 @@ class CtaEngine(BaseEngine):
         self.check_stop_order(tick)
 
         for strategy in strategies:
-            print("策略引擎，接收tick消息的时候-------------")
+            #print("策略引擎，接收tick消息的时候-------------")
             # print(strategy)
             # print(strategy.on_tick)
-            print(tick)
+            #print(tick)
             position=self.offset_converter.get_position_holding(tick.vt_symbol)
-            print("-=================收到tick的时候，查询当前的持有情况")
-            print(position.vt_symbol)
+            #print("-=================收到tick的时候，查询当前的持有情况")
+            #print(position.vt_symbol)
             if strategy.inited:
                 self.call_strategy_func(strategy, strategy.on_tick, tick)
 
@@ -243,6 +243,7 @@ class CtaEngine(BaseEngine):
         position = event.data
         print("-----------------------------策略中持仓信息打印")
         print(position)
+        database_manager.save_position_data([position])
 
         self.offset_converter.update_position(position)
 
