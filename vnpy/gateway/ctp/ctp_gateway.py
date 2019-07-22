@@ -525,7 +525,7 @@ class CtpTdApi(TdApi):
             cost += data["PositionCost"]            #持仓成本
             position.price = cost / (position.volume * size)
         
-        # Get frozen volume     获得冷冻量
+        # Get frozen volume     获得冷冻金额
         if position.direction == Direction.LONG:
             position.frozen += data["ShortFrozen"]
         else:

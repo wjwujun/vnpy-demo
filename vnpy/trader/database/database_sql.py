@@ -32,7 +32,7 @@ def init(driver: Driver, settings: dict):
     db = init_funcs[driver](settings)
     # 调用init_models函数生成model类,将model类添加到db中,然后将两张表返回（DbTickData和DBBarData,将这两张表（类）添加到SqlManager中，生成统一的BaseDatabaseManager
     bar, tick,account,position = init_models(db, driver)
-    return SqlManager(bar, tick,account)
+    return SqlManager(bar, tick,account,position)
 
 
 def init_sqlite(settings: dict):
@@ -398,12 +398,12 @@ def init_models(db: Database, driver: Driver):
         symbol: str = CharField()
         exchange: str = CharField()
         direction: str = CharField()
-        volume: str = CharField()
-        frozen: str = CharField()
+        volume: str = FloatField()
+        frozen: str = FloatField()
 
-        price: str = CharField()
-        pnl: str = CharField()
-        yd_volume: str = CharField()
+        price: str = FloatField()
+        pnl: str = FloatField()
+        yd_volume: str = FloatField()
         gateway_name: str = CharField()
 
 
@@ -411,12 +411,13 @@ def init_models(db: Database, driver: Driver):
             database = db
 
         @staticmethod
-        def from_positon(positon: PositionData):
-            db_positon = PositionData()
+        def from_position(positon: PositionData):
+            db_positon = DbPositionData()
 
             db_positon.symbol = positon.symbol
             db_positon.exchange = positon.exchange
             db_positon.direction = positon.direction
+
             db_positon.volume = positon.volume
             db_positon.frozen = positon.frozen
             db_positon.price = positon.price
@@ -447,12 +448,12 @@ def init_models(db: Database, driver: Driver):
             dicts = [i.to_dict() for i in objs]
             with db.atomic():
                 for c in chunked(dicts, 50):
-                    DbAccountData.insert_many(c).on_conflict_replace().execute()
+                    DbPositionData.insert_many(c).on_conflict_replace().execute()
 
     db.connect()
     #创建表
-    db.create_tables([DbBarData, DbTickData,DbAccountData])
-    return DbBarData, DbTickData,DbAccountData
+    db.create_tables([DbBarData, DbTickData,DbAccountData,DbPositionData])
+    return DbBarData, DbTickData,DbAccountData,DbPositionData
 
 
 class SqlManager(BaseDatabaseManager):
