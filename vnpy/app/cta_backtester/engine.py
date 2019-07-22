@@ -33,7 +33,7 @@ class BacktesterEngine(BaseEngine):
     def __init__(self, main_engine: MainEngine, event_engine: EventEngine):
         """"""
         super().__init__(main_engine, event_engine, APP_NAME)
-
+        print("----------初始化回测信息")
         self.classes = {}
         self.backtesting_engine = None
         self.thread = None

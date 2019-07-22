@@ -3,6 +3,7 @@ from time import sleep
 from datetime import datetime, time
 from logging import INFO
 
+from vnpy.app.cta_backtester import CtaBacktesterApp
 from vnpy.app.data_recorder import DataRecorderApp
 from vnpy.event import EventEngine
 from vnpy.trader.setting import SETTINGS
@@ -43,9 +44,13 @@ def run_child():
     cta_engine = main_engine.add_app(CtaStrategyApp)
     main_engine.write_log("主引擎创建成功")
 
+    #"创建数据记录引擎"
     #data_engine=main_engine.add_app(DataRecorderApp)
-    #main_engine.write_log("创建数据记录引擎")
+    #main_engine.write_log()
 
+    #创建回测引擎
+    ctaback_engine=main_engine.add_app(CtaBacktesterApp)
+    ctaback_engine.init_engine
 
     log_engine = main_engine.get_engine("log")
     event_engine.register(EVENT_CTA_LOG, log_engine.process_log_event)

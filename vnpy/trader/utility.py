@@ -307,6 +307,7 @@ class ArrayManager(object):
     def open(self):
         """
         Get open price time series.
+        获取开盘价时间序列。
         """
         return self.open_array
 
@@ -314,6 +315,7 @@ class ArrayManager(object):
     def high(self):
         """
         Get high price time series.
+        获得高价时间序列。
         """
         return self.high_array
 
@@ -321,6 +323,7 @@ class ArrayManager(object):
     def low(self):
         """
         Get low price time series.
+        获得低价时间序列。
         """
         return self.low_array
 
@@ -328,6 +331,7 @@ class ArrayManager(object):
     def close(self):
         """
         Get close price time series.
+        获得收盘价时间序列。
         """
         return self.close_array
 
@@ -335,12 +339,13 @@ class ArrayManager(object):
     def volume(self):
         """
         Get trading volume time series.
+        获取交易量时间序列。
         """
         return self.volume_array
 
     def sma(self, n, array=False):
         """
-        Simple moving average.
+      简单移动平均线。
         """
         result = talib.SMA(self.close, n)
         if array:
@@ -349,7 +354,7 @@ class ArrayManager(object):
 
     def std(self, n, array=False):
         """
-        Standard deviation
+      标准偏差
         """
         result = talib.STDDEV(self.close, n)
         if array:
@@ -358,7 +363,7 @@ class ArrayManager(object):
 
     def cci(self, n, array=False):
         """
-        Commodity Channel Index (CCI).
+       商品通道指数（CCI）。
         """
         result = talib.CCI(self.high, self.low, self.close, n)
         if array:
@@ -367,7 +372,7 @@ class ArrayManager(object):
 
     def atr(self, n, array=False):
         """
-        Average True Range (ATR).
+            平均真实范围（ATR）。
         """
         result = talib.ATR(self.high, self.low, self.close, n)
         if array:
@@ -376,7 +381,7 @@ class ArrayManager(object):
 
     def rsi(self, n, array=False):
         """
-        Relative Strenght Index (RSI).
+            相对强弱指数（RSI）。
         """
         result = talib.RSI(self.close, n)
         if array:
@@ -405,7 +410,7 @@ class ArrayManager(object):
 
     def boll(self, n, dev, array=False):
         """
-        Bollinger Channel.
+            布林通道。
         """
         mid = self.sma(n, array)
         std = self.std(n, array)
@@ -417,7 +422,7 @@ class ArrayManager(object):
 
     def keltner(self, n, dev, array=False):
         """
-        Keltner Channel.
+            凯尔特纳频道
         """
         mid = self.sma(n, array)
         atr = self.atr(n, array)
@@ -429,7 +434,7 @@ class ArrayManager(object):
 
     def donchian(self, n, array=False):
         """
-        Donchian Channel.
+       Donchian频道。
         """
         up = talib.MAX(self.high, n)
         down = talib.MIN(self.low, n)
@@ -441,8 +446,8 @@ class ArrayManager(object):
 
 def virtual(func: "callable"):
     """
-    mark a function as "virtual", which means that this function can be override.
-    any base class should use this or @abstractmethod to decorate all functions
-    that can be (re)implemented by subclasses.
+    将函数标记为“虚拟”，这意味着可以覆盖此函数。
+         任何基类都应该使用它或@abstractmethod来装饰所有函数
+         可以由子类（重新）实现。
     """
     return func
