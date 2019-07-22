@@ -109,7 +109,7 @@ class OrderData(BaseData):
     symbol: str
     exchange: Exchange
     orderid: str
-
+    datetime: datetime
     type: OrderType = OrderType.LIMIT
     direction: Direction = ""
     offset: Offset = Offset.NONE
@@ -178,6 +178,7 @@ class PositionData(BaseData):
     symbol: str
     exchange: Exchange
     direction: Direction
+    datetime: datetime
 
     volume: float = 0
     frozen: float = 0
@@ -198,6 +199,8 @@ class AccountData(BaseData):
     available.
     """
     accountid: str
+    datetime: datetime
+
     balance: float = 0
     frozen: float = 0
     frozen_margin: float = 0

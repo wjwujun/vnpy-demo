@@ -333,7 +333,7 @@ def init_models(db: Database, driver: Driver):
         """
 
         id = AutoField()
-
+        datetime: datetime = DateTimeField()
         accountid: str = CharField()
         balance: str = CharField()
         frozen: str = CharField()
@@ -353,6 +353,7 @@ def init_models(db: Database, driver: Driver):
             db_account = DbAccountData()
 
             db_account.accountid = account.accountid
+            db_account.datetime = account.datetime
             db_account.balance = account.balance
             db_account.frozen = account.frozen
             db_account.frozen_margin = account.frozen_margin
@@ -369,6 +370,7 @@ def init_models(db: Database, driver: Driver):
                 accountid=self.accountid,
                 balance=self.balance,
                 frozen=self.frozen,
+                datetime=self.datetime,
                 frozen_margin=self.frozen_margin,
                 frozen_cash=self.frozen_cash,
                 frozen_commission=self.frozen_commission,
@@ -398,6 +400,7 @@ def init_models(db: Database, driver: Driver):
         symbol: str = CharField()
         exchange: str = CharField()
         direction: str = CharField()
+        datetime: datetime = DateTimeField()
         volume: str = FloatField()
         frozen: str = FloatField()
 
@@ -417,6 +420,7 @@ def init_models(db: Database, driver: Driver):
             db_positon.symbol = positon.symbol
             db_positon.exchange = positon.exchange
             db_positon.direction = positon.direction
+            db_positon.datetime = positon.datetime
 
             db_positon.volume = positon.volume
             db_positon.frozen = positon.frozen
@@ -432,6 +436,7 @@ def init_models(db: Database, driver: Driver):
                 symbol=self.symbol,
                 exchange=self.exchange,
                 direction=self.direction,
+                datetime=self.datetime,
                 volume=self.volume,
                 frozen=self.frozen,
                 price=self.price,

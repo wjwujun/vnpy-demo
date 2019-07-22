@@ -2,7 +2,8 @@
 """
 
 from datetime import datetime
-from time import sleep
+from time import  time
+
 
 from vnpy.api.ctp import (
     MdApi,
@@ -497,9 +498,11 @@ class CtpTdApi(TdApi):
                 symbol=data["InstrumentID"],
                 exchange=symbol_exchange_map[data["InstrumentID"]],
                 direction=DIRECTION_CTP2VT[data["PosiDirection"]],
+                datetime=datetime.now(),
                 gateway_name=self.gateway_name
             )
             self.positions[key] = position
+
 
         # For SHFE position data update
         if position.exchange == Exchange.SHFE:
@@ -544,6 +547,7 @@ class CtpTdApi(TdApi):
         account = AccountData(
             accountid=data["AccountID"],        #账号id
             balance=data["Balance"],            #期货结算准备金
+            datetime=datetime.now(),
             frozen=data["FrozenMargin"] + data["FrozenCash"] + data["FrozenCommission"], #冻结的所有资金
             frozen_margin=data["FrozenMargin"],     #冻结的保证金
             frozen_cash = data["FrozenCash"],       #冻结的资金
@@ -554,6 +558,7 @@ class CtpTdApi(TdApi):
         )
         account.available = data["Available"]       #可用资金
         print(6666666666666)
+
         print(account)
         # print(account.available)
         # print(data)

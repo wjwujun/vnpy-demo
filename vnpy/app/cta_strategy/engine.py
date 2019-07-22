@@ -4,7 +4,7 @@ import importlib
 import os
 from collections import defaultdict
 from pathlib import Path
-from time import sleep
+from time import sleep, time
 from typing import Any, Callable
 from datetime import datetime, timedelta
 from threading import Thread
@@ -243,6 +243,7 @@ class CtaEngine(BaseEngine):
         position = event.data
         print("-----------------------------策略中持仓信息打印")
         print(position)
+        #datetime = datetime.strptime(datetime.datetime.now(), "%Y%m%d %H:%M:%S.%f"),
         database_manager.save_position_data([position])
 
         self.offset_converter.update_position(position)
