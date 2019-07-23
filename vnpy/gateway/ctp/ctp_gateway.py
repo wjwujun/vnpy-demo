@@ -557,9 +557,9 @@ class CtpTdApi(TdApi):
             gateway_name=self.gateway_name
         )
         account.available = data["Available"]       #可用资金
-        print(6666666666666)
+        #print(6666666666666)
 
-        print(account)
+        #print(account)
         # print(account.available)
         # print(data)
         self.gateway.on_account(account)
@@ -640,6 +640,7 @@ class CtpTdApi(TdApi):
     def onRtnTrade(self, data: dict):
         """
         Callback of trade status update.
+        交易状态更新回调。
         """
         symbol = data["InstrumentID"]
         exchange = symbol_exchange_map.get(symbol, "")
@@ -661,6 +662,7 @@ class CtpTdApi(TdApi):
             time=data["TradeTime"],
             gateway_name=self.gateway_name
         )
+        print("==========================================交易状态更新回调")
         self.gateway.on_trade(trade)        
     
     def connect(

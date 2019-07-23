@@ -46,11 +46,10 @@ def run_child():
 
     #"创建数据记录引擎"
     #data_engine=main_engine.add_app(DataRecorderApp)
-    #main_engine.write_log()
 
     #创建回测引擎
-    ctaback_engine=main_engine.add_app(CtaBacktesterApp)
-    ctaback_engine.init_engine
+    #ctaback_engine=main_engine.add_app(CtaBacktesterApp)
+    #ctaback_engine.init_engine
 
     log_engine = main_engine.get_engine("log")
     event_engine.register(EVENT_CTA_LOG, log_engine.process_log_event)

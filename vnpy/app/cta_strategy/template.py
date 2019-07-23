@@ -198,6 +198,7 @@ class CtaTemplate(ABC):
     def cancel_all(self):
         """
         Cancel all orders sent by strategy.
+        取消策略发送的所有订单。
         """
         if self.trading:
             self.cta_engine.cancel_all(self)
@@ -221,7 +222,7 @@ class CtaTemplate(ABC):
         callback: Callable = None,
     ):
         """
-        Load historical bar data for initializing strategy.
+            加载历史条bar据以初始化策略。
         """
         if not callback:
             callback = self.on_bar

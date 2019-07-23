@@ -20,6 +20,7 @@ class OffsetConverter:
         self.main_engine = main_engine
         self.holdings = {}
 
+    #更新持仓相关信息
     def update_position(self, position: PositionData):
         """"""
         if not self.is_convert_required(position.vt_symbol):
@@ -29,6 +30,7 @@ class OffsetConverter:
         print("===========================--------------------cta处理持仓信息的时候调用的方法")
         holding.update_position(position)
 
+    #更新交易的数据信息
     def update_trade(self, trade: TradeData):
         """"""
         if not self.is_convert_required(trade.vt_symbol):
@@ -45,6 +47,7 @@ class OffsetConverter:
         holding = self.get_position_holding(order.vt_symbol)
         holding.update_order(order)
 
+    #更新请求成功的订单号
     def update_order_request(self, req: OrderRequest, vt_orderid: str):
         """"""
         if not self.is_convert_required(req.vt_symbol):
@@ -117,6 +120,7 @@ class PositionHolding:
         self.short_yd_frozen = 0
         self.short_td_frozen = 0
 
+    #更新持仓信息
     def update_position(self, position: PositionData):
         """"""
         if position.direction == Direction.LONG:
@@ -128,8 +132,10 @@ class PositionHolding:
             self.short_yd = position.yd_volume
             self.short_td = self.short_pos - self.short_yd
 
+    #更新请求成功后，订单的数据
     def update_order(self, order: OrderData):
-        """"""
+
+        #是否活跃订单
         if order.is_active():
             self.active_orders[order.vt_orderid] = order
         else:
@@ -138,6 +144,7 @@ class PositionHolding:
 
         self.calculate_frozen()
 
+    #更新订单请求的成功后的相关数据
     def update_order_request(self, req: OrderRequest, vt_orderid: str):
         """"""
         gateway_name, orderid = vt_orderid.split(".")
@@ -182,6 +189,8 @@ class PositionHolding:
 
         self.long_pos = self.long_td + self.long_yd
         self.short_pos = self.short_td + self.short_yd
+
+
 
     def calculate_frozen(self):
         """"""

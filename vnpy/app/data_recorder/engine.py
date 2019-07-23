@@ -65,9 +65,9 @@ class RecorderEngine(BaseEngine):
             try:
                 task = self.queue.get(timeout=1)
                 task_type, data = task
-                # print("ddddddddddddddddddddddd")
-                # print(task)
-                # print(data.symbol)
+                #print("--------------------")
+                #print(task)
+                #print(data.symbol)
                 if task_type == "tick":
                     self.write_log("tick----插入数据库")
                     database_manager.save_tick_data([data])
@@ -173,7 +173,8 @@ class RecorderEngine(BaseEngine):
             数据处理函数
         """
         tick = event.data
-
+        print("11111111111111111111===========")
+        print(tick)
         #处理tick数据
         if tick.vt_symbol in self.tick_recordings:
              self.record_tick(tick)
@@ -228,11 +229,15 @@ class RecorderEngine(BaseEngine):
     def record_tick(self, tick: TickData):
         """"""
         task = ("tick", copy(tick))
+        print("2222222222222222222222------------")
+        print(task)
         self.queue.put(task)
 
     def record_bar(self, bar: BarData):
         """"""
         task = ("bar", copy(bar))
+        print("33333333333333333333333------------")
+        print(task)
         self.queue.put(task)
 
     #生成k线

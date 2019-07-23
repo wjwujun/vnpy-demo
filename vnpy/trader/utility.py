@@ -156,6 +156,7 @@ class BarGenerator:
         if not tick.last_price:
             return
 
+        #新的1分钟不存在bar
         if not self.bar:
             new_minute = True
         elif self.bar.datetime.minute != tick.datetime.minute:
@@ -196,6 +197,7 @@ class BarGenerator:
     def update_bar(self, bar: BarData):
         """
         Update 1 minute bar into generator
+            更新1分钟bar到generator中
         """
         # If not inited, creaate window bar object
         if not self.window_bar:

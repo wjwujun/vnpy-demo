@@ -16,7 +16,7 @@ from vnpy.trader.engine import BaseEngine, MainEngine
 from vnpy.trader.object import (OrderRequest,SubscribeRequest,HistoryRequest,LogData,TickData,BarData,ContractData)
 from vnpy.trader.event import (EVENT_TICK, EVENT_ORDER, EVENT_TRADE,EVENT_POSITION,EVENT_ACCOUNT)
 from vnpy.trader.constant import (Direction, OrderType, Interval, Exchange, Offset, Status)
-from vnpy.trader.utility import load_json, save_json, extract_vt_symbol, round_to
+from vnpy.trader.utility import load_json, save_json, extract_vt_symbol, round_to, BarGenerator
 from vnpy.trader.database import database_manager
 from vnpy.trader.rqdata import rqdata_client
 
@@ -152,26 +152,33 @@ class CtaEngine(BaseEngine):
         data = rqdata_client.query_history(req)
         return data
 
+    def on_5min_bar(self, bar: BarData):
+        database_manager.save_bar_data([bar])
+    def on_bar(self, bar: BarData):
+        self.bg.update_bar(bar)
     #接收到tick数据后的处理方法,
     def process_tick_event(self, event: Event):
         tick = event.data
+        print("-----------------------------------測-----收到tick的")
+        print(tick)
+        #保存tick数据到mysql
+        database_manager.save_tick_data([tick])
+        # 保存bar数据到mysql
+        bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
+        bg.update_tick(tick)
 
-        # print("1111111111111111111111")
-        # print(self.symbol_strategy_map);
+
         strategies = self.symbol_strategy_map[tick.vt_symbol]
         if not strategies:
             return
 
         self.check_stop_order(tick)
-
         for strategy in strategies:
-            #print("策略引擎，接收tick消息的时候-------------")
-            # print(strategy)
-            # print(strategy.on_tick)
-            #print(tick)
-            position=self.offset_converter.get_position_holding(tick.vt_symbol)
-            #print("-=================收到tick的时候，查询当前的持有情况")
-            #print(position.vt_symbol)
+            #收到tick的时候，查询当前的持有情况
+            holding=self.offset_converter.get_position_holding(tick.vt_symbol)
+            print("-----------------------------------收到tick的时候查询持有情况")
+            print(holding.long_pos)
+            print(holding.short_pos)
             if strategy.inited:
                 self.call_strategy_func(strategy, strategy.on_tick, tick)
 
@@ -224,6 +231,10 @@ class CtaEngine(BaseEngine):
             return
 
         # Update strategy pos before calling on_trade method
+        # 在调用on_trade方法之前更新策略pos
+        print("处理EVENT_TRADE时候答应仓位情况-------------------")
+        print(strategy.volume)
+        print(trade.volume)
         if trade.direction == Direction.LONG:
             strategy.pos += trade.volume
         else:
@@ -245,7 +256,7 @@ class CtaEngine(BaseEngine):
         print(position)
         #datetime = datetime.strptime(datetime.datetime.now(), "%Y%m%d %H:%M:%S.%f"),
         database_manager.save_position_data([position])
-
+        #更新持仓数据
         self.offset_converter.update_position(position)
 
     #账户信息查看
@@ -344,8 +355,8 @@ class CtaEngine(BaseEngine):
         vt_orderids = []
 
         for req in req_list:
-            vt_orderid = self.main_engine.send_order(   #发送订单
-                req, contract.gateway_name)
+            ##发送订单，返回订单号
+            vt_orderid = self.main_engine.send_order(req, contract.gateway_name)
             vt_orderids.append(vt_orderid)
 
             self.offset_converter.update_order_request(req, vt_orderid)
@@ -496,13 +507,13 @@ class CtaEngine(BaseEngine):
         """"""
         return self.engine_type
 
+    #策略初始化的时候加载历史数据，用于初始化
     def load_bar(self, vt_symbol: str, days: int, interval: Interval,callback: Callable[[BarData], None]):
-        """"""
         symbol, exchange = extract_vt_symbol(vt_symbol)
         end = datetime.now()
         start = end - timedelta(days)
 
-        # Query bars from RQData by default, if not found, load from database.
+        # 从RQData 加载默认数据,如果找不到，从数据库加载数据
         bars = self.query_bar_from_rq(symbol, exchange, interval, start, end)
         if not bars:
             bars = database_manager.load_bar_data(
