@@ -72,6 +72,7 @@ class CtaEngine(BaseEngine):
 
         self.offset_converter = OffsetConverter(self.main_engine)
 
+        self.bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
 
     def init_engine(self):
         """
@@ -153,19 +154,23 @@ class CtaEngine(BaseEngine):
         return data
 
     def on_5min_bar(self, bar: BarData):
+        print("5555555555min bar---------------")
+        print(bar)
         database_manager.save_bar_data([bar])
     def on_bar(self, bar: BarData):
+        print("555555  1min")
+        print(bar)
         self.bg.update_bar(bar)
     #接收到tick数据后的处理方法,
     def process_tick_event(self, event: Event):
         tick = event.data
-        print("-----------------------------------測-----收到tick的")
+        print("-----------------------------------保存-----收到tick的")
         print(tick)
         #保存tick数据到mysql
         database_manager.save_tick_data([tick])
+
         # 保存bar数据到mysql
-        bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
-        bg.update_tick(tick)
+        self.bg.update_tick(tick)
 
 
         strategies = self.symbol_strategy_map[tick.vt_symbol]

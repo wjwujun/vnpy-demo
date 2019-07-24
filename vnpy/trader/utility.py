@@ -210,6 +210,8 @@ class BarGenerator:
             self.window_bar = BarData(
                 symbol=bar.symbol,
                 exchange=bar.exchange,
+                interval=Interval.MINUTE5,
+                name=bar.name,
                 datetime=dt,
                 gateway_name=bar.gateway_name,
                 open_price=bar.open_price,

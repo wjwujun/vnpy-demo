@@ -131,6 +131,7 @@ class Interval(Enum):
         k线生成，时间控制
     """
     MINUTE = "1m"
+    MINUTE5 = "5m"
     HOUR = "1h"
     DAILY = "d"
     WEEKLY = "w"
