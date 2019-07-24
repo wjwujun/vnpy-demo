@@ -17,13 +17,12 @@ class DoubleMa22Strategy(CtaTemplate):
     author = "wj"
 
     # 策略变量
+    fixed_size = 1      # 开仓数量
     fast_ma = 0         # 5分钟快速均线
     slow_ma = 0         # 5分钟慢速均线
-    ma_trend = 0        # 均线趋势，多头1，空头-1
+    ma_trend = 0        # 判断多空方向
+    current_price=0.0   #当前价格
 
-
-    # 变量列表，保存了变量的名称
-    variables = ["fast_ma", "slow_ma", "ma_trend"]
 
     # ----------------------------------------------------------------------
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
@@ -83,26 +82,24 @@ class DoubleMa22Strategy(CtaTemplate):
         self.am.update_bar(bar)
         if not self.am.inited:
             return
-        # 如果15分钟数据尚未初始化完毕，则直接返回
-        if not self.ma_trend:
-            return
+
         # 计算5m均线
         self.ma_value = self.am.sma(5)
 
         # 当前无仓位
         if self.pos == 0:
-            if self.ma_trend > 0 and self.ma_value >= self.rsi_long:
-                self.buy(bar.close_price + 5, self.fixed_size)
-            elif self.ma_trend < 0 and self.rsi_value <= self.rsi_short:
-                self.short(bar.close_price - 5, self.fixed_size)
-        # 持有多头仓位
+            if self.ma_value >= self.rsi_long:
+                self.buy(bar.close_price + 2, self.fixed_size)
+            elif self.rsi_value <= self.rsi_short:
+                self.short(bar.close_price - 2, self.fixed_size)
+        # 持有多头
         elif self.pos > 0:
-            if self.ma_trend < 0 or self.rsi_value < 50:
-                self.sell(bar.close_price - 5, abs(self.pos))
-        # 持有空头仓位
+            if self.rsi_value < 50:
+                self.sell(bar.close_price - 2, abs(self.pos))
+        # 持有空头
         elif self.pos < 0:
-            if self.ma_trend > 0 or self.rsi_value > 50:
-                self.cover(bar.close_price + 5, abs(self.pos))
+            if self.rsi_value > 50:
+                self.cover(bar.close_price + 2, abs(self.pos))
         # 发出状态更新事件
         self.put_event()
 

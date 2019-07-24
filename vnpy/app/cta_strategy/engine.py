@@ -72,7 +72,8 @@ class CtaEngine(BaseEngine):
 
         self.offset_converter = OffsetConverter(self.main_engine)
 
-        self.bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
+        #self.bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
+        self.bg = BarGenerator(self.on_bar)
 
     def init_engine(self):
         """
@@ -161,6 +162,7 @@ class CtaEngine(BaseEngine):
         print("555555  1min")
         print(bar)
         self.bg.update_bar(bar)
+        database_manager.save_bar_data([bar])
     #接收到tick数据后的处理方法,
     def process_tick_event(self, event: Event):
         tick = event.data
@@ -237,7 +239,7 @@ class CtaEngine(BaseEngine):
 
         # Update strategy pos before calling on_trade method
         # 在调用on_trade方法之前更新策略pos
-        print("处理EVENT_TRADE时候答应仓位情况-------------------")
+        print("处理EVENT_TRADE时候,仓位情况-------------------")
         print(strategy.volume)
         print(trade.volume)
         if trade.direction == Direction.LONG:
