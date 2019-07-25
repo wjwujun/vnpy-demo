@@ -9,6 +9,7 @@ from vnpy.app.cta_strategy import (
     ArrayManager,
 )
 
+from vnpy.trader.database import database_manager
 """
 一个ATR-RSI指标结合的交易策略，适合用在股指的1分钟和5分钟线上。
 2. 将IF0000_1min.csv用ctaHistoryData.py导入MongoDB后，直接运行本文件即可回测策略
@@ -91,9 +92,11 @@ class AtrRsiStrategy(CtaTemplate):
         Callback of new tick data update.
         收到行情TICK的回调
         """
-        print("-------------------------策略接收到消息的时候")
+        print("-------------------------策略--tick")
         print(tick)
         self.bg.update_tick(tick)
+        database_manager.save_tick_data([tick])
+
 
     def on_bar(self, bar: BarData):
         """
@@ -101,9 +104,13 @@ class AtrRsiStrategy(CtaTemplate):
         收到Bar推送的回调
         """
         self.cancel_all()
+        print("-------------------------策略--bar")
+        print(bar)
 
+        database_manager.save_bar_data([bar])
         # 保存K线数据
         am = self.am
+        print(am.count)
         am.update_bar(bar)
         if not am.inited:
             return

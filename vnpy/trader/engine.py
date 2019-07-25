@@ -32,7 +32,7 @@ from .object import (
 )
 from .setting import SETTINGS
 from .utility import get_folder_path, TRADER_DIR
-
+from vnpy.trader.database import database_manager
 
 class MainEngine:
     """
@@ -387,13 +387,15 @@ class OmsEngine(BaseEngine):
         self.trades[trade.vt_tradeid] = trade
 
     def process_position_event(self, event: Event):
-        """"""
         position = event.data
+        #保存持仓信息
+        #database_manager.save_position_data([position])
         self.positions[position.vt_positionid] = position
 
     def process_account_event(self, event: Event):
-        """"""
         account = event.data
+        #保存账户信息
+        #database_manager.save_account_data([account])
         self.accounts[account.vt_accountid] = account
 
     def process_contract_event(self, event: Event):

@@ -73,7 +73,7 @@ class CtaEngine(BaseEngine):
         self.offset_converter = OffsetConverter(self.main_engine)
 
         #self.bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
-        self.bg = BarGenerator(self.on_bar)
+        #self.bg = BarGenerator(self.on_bar)
 
     def init_engine(self):
         """
@@ -154,26 +154,11 @@ class CtaEngine(BaseEngine):
         data = rqdata_client.query_history(req)
         return data
 
-    def on_5min_bar(self, bar: BarData):
-        print("5555555555min bar---------------")
-        print(bar)
-        database_manager.save_bar_data([bar])
-    def on_bar(self, bar: BarData):
-        print("555555  1min")
-        print(bar)
-        self.bg.update_bar(bar)
-        database_manager.save_bar_data([bar])
     #接收到tick数据后的处理方法,
     def process_tick_event(self, event: Event):
         tick = event.data
-        print("-----------------------------------保存-----收到tick的")
-        print(tick)
-        #保存tick数据到mysql
-        database_manager.save_tick_data([tick])
-
-        # 保存bar数据到mysql
-        self.bg.update_tick(tick)
-
+        #print("-----------------------------------保存-----收到tick的")
+        #print(tick)
 
         strategies = self.symbol_strategy_map[tick.vt_symbol]
         if not strategies:
@@ -182,10 +167,10 @@ class CtaEngine(BaseEngine):
         self.check_stop_order(tick)
         for strategy in strategies:
             #收到tick的时候，查询当前的持有情况
-            holding=self.offset_converter.get_position_holding(tick.vt_symbol)
-            print("-----------------------------------收到tick的时候查询持有情况")
-            print(holding.long_pos)
-            print(holding.short_pos)
+            #holding=self.offset_converter.get_position_holding(tick.vt_symbol)
+            # print("-----------------------------------收到tick的时候查询持有情况")
+            # print(holding.long_pos)
+            # print(holding.short_pos)
             if strategy.inited:
                 self.call_strategy_func(strategy, strategy.on_tick, tick)
 
