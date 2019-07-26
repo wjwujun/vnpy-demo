@@ -47,7 +47,7 @@ def run_child():
     #"创建数据记录引擎"
     #data_engine=main_engine.add_app(DataRecorderApp)
 
-    #创建回测引擎
+    #创建回测引擎11
     #ctaback_engine=main_engine.add_app(CtaBacktesterApp)
     #ctaback_engine.init_engine
 
