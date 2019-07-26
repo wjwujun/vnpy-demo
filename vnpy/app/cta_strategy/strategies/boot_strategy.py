@@ -1,3 +1,5 @@
+import time
+
 from vnpy.app.cta_strategy import (
     CtaTemplate,
     StopOrder,
@@ -18,10 +20,20 @@ class DoubleMa22Strategy(CtaTemplate):
 
     # 策略变量
     fixed_size = 1      # 开仓数量
-    fast_ma = 0         # 5分钟快速均线
-    slow_ma = 0         # 5分钟慢速均线
-    ma_trend = 0        # 判断多空方向
-    current_price=0.0   #当前价格
+    current_price=0   #当前价格
+    max_open=5          #每天最大开仓次数
+    open_count=0        #今日开仓次数
+    today=0             #当天时间
+
+    stop_long_price=0   #多单止损价格
+    stop_short_price=0  #空单止损价格
+
+    # 参数列表，保存了参数的名称
+    parameters = ["current_price", "max_open", "open_count",
+                  "today", "fixed_size"]
+    # 变量列表，保存了变量的名称
+    variables = ["boll_up", "boll_down", "cci_value", "atr_value",
+                 "intra_trade_high", "intra_trade_low", "long_stop", "short_stop"]
 
 
     # ----------------------------------------------------------------------
@@ -31,8 +43,11 @@ class DoubleMa22Strategy(CtaTemplate):
             cta_engine, strategy_name, vt_symbol, setting
         )
 
-        self.bg = BarGenerator(self.on_bar,5, self.on_5min_bar)
+        self.bg = BarGenerator(self.on_bar)
         self.am = ArrayManager()
+        self.today=time.strftime("%Y-%m-%d", time.localtime())
+        print("=========")
+        print(self.today)
 
         # 注意策略类中的可变对象属性（通常是list和dict等），在策略初始化时需要重新创建，
         # 否则会出现多个策略实例之间数据共享的情况，有可能导致潜在的策略逻辑错误风险，
@@ -72,36 +87,47 @@ class DoubleMa22Strategy(CtaTemplate):
         """
         Callback of new bar data update.
         """
-        self.bg.update_bar(bar)
-
-    def on_5min_bar(self, bar: BarData):
-        """5分钟K线"""
-
         self.cancel_all()
-        # 保存K线数据
-        self.am.update_bar(bar)
         if not self.am.inited:
             return
 
-        # 计算5m均线
+        #Determine whether positions can also be opened on the day
+        now = time.strftime("%Y-%m-%d", time.localtime())
+        if (self.open_count > self.max_open):
+            if (self.today == now):
+                return
+        else:
+            self.today = time.strftime("%Y-%m-%d", time.localtime())
+            self.open_count = 0
+
+        # Calculator the 5min moving average
         self.ma_value = self.am.sma(5)
 
         # 当前无仓位
         if self.pos == 0:
-            if self.ma_value >= self.rsi_long:
+            if bar.close_price > self.ma_value:  # The current price is above the 5min moving average，Long positions
+                self.stop_long_price = bar.close_price - 20  # long stop  price
                 self.buy(bar.close_price + 2, self.fixed_size)
-            elif self.rsi_value <= self.rsi_short:
+            elif bar.close_price < self.ma_value:  # The current price is above the 5min moving average，Short positions
+                self.stop_long_price = bar.close_price + 20  # short stop  price
                 self.short(bar.close_price - 2, self.fixed_size)
-        # 持有多头
+        #Holding a long position
         elif self.pos > 0:
-            if self.rsi_value < 50:
+            if bar.close_price <= self.stop_long_price:  # long stop loss,current price <= Stop-Loss Price，trigger stop price
                 self.sell(bar.close_price - 2, abs(self.pos))
-        # 持有空头
+        #Hold short positions
         elif self.pos < 0:
-            if self.rsi_value > 50:
+            if bar.close_price >= self.stop_short_price:  # short stop loss,current price>=Stop-Loss Price，trigger stop price
                 self.cover(bar.close_price + 2, abs(self.pos))
+
         # 发出状态更新事件
         self.put_event()
+
+    def on_5min_bar(self, bar: BarData):
+        """5分钟K线"""
+        pass
+
+
 
 
 
