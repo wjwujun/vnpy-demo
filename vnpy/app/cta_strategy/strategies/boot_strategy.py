@@ -20,34 +20,28 @@ class DoubleMa22Strategy(CtaTemplate):
 
     # 策略变量
     fixed_size = 1      # 开仓数量
-    current_price=0   #当前价格
+    current_price=0     # 下单价格
     max_open=5          #每天最大开仓次数
     open_count=0        #今日开仓次数
     today=0             #当天时间
 
     stop_long_price=0   #多单止损价格
     stop_short_price=0  #空单止损价格
-
+    vt_orderids = []        # 保存委托代码的列表
     # 参数列表，保存了参数的名称
     parameters = ["current_price", "max_open", "open_count",
                   "today", "fixed_size"]
-    # 变量列表，保存了变量的名称
-    variables = ["boll_up", "boll_down", "cci_value", "atr_value",
-                 "intra_trade_high", "intra_trade_low", "long_stop", "short_stop"]
 
 
-    # ----------------------------------------------------------------------
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
         """"""
         super(DoubleMa22Strategy, self).__init__(
             cta_engine, strategy_name, vt_symbol, setting
         )
 
-        self.bg = BarGenerator(self.on_bar)
+        self.bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
         self.am = ArrayManager()
         self.today=time.strftime("%Y-%m-%d", time.localtime())
-        print("=========")
-        print(self.today)
 
         # 注意策略类中的可变对象属性（通常是list和dict等），在策略初始化时需要重新创建，
         # 否则会出现多个策略实例之间数据共享的情况，有可能导致潜在的策略逻辑错误风险，
@@ -87,11 +81,23 @@ class DoubleMa22Strategy(CtaTemplate):
         """
         Callback of new bar data update.
         """
+        self.bg.update_bar(bar)
+
+
+
+
+    def on_5min_bar(self, bar: BarData):
+        """5分钟K线"""
+
+        # 撤销之前发出的尚未成交的委托（包括限价单和停止单）
         self.cancel_all()
+        self.vt_orderids.clear()
+        # 保存K线数据
+        self.am.update_bar(bar)
         if not self.am.inited:
             return
 
-        #Determine whether positions can also be opened on the day
+        # Determine whether positions can also be opened on the day
         now = time.strftime("%Y-%m-%d", time.localtime())
         if (self.open_count > self.max_open):
             if (self.today == now):
@@ -107,25 +113,26 @@ class DoubleMa22Strategy(CtaTemplate):
         if self.pos == 0:
             if bar.close_price > self.ma_value:  # The current price is above the 5min moving average，Long positions
                 self.stop_long_price = bar.close_price - 20  # long stop  price
-                self.buy(bar.close_price + 2, self.fixed_size)
+                vt_orderids = self.buy(bar.close_price + 2, self.fixed_size)
+                self.current_price = bar.close_price + 2
+                self.vt_orderids.extend(vt_orderids)        #save orderids
             elif bar.close_price < self.ma_value:  # The current price is above the 5min moving average，Short positions
                 self.stop_long_price = bar.close_price + 20  # short stop  price
-                self.short(bar.close_price - 2, self.fixed_size)
-        #Holding a long position
+                vt_orderids = self.short(bar.close_price - 2, self.fixed_size)
+                self.current_price = bar.close_price + 2
+                self.vt_orderids.extend(vt_orderids)        #save orderids
+        # Holding a long position
         elif self.pos > 0:
-            if bar.close_price <= self.stop_long_price:  # long stop loss,current price <= Stop-Loss Price，trigger stop price
+            if bar.close_price <= self.stop_long_price or bar.close_price <= self.ma_value:  # long stop loss,current price <= Stop-Loss Price，trigger stop price
                 self.sell(bar.close_price - 2, abs(self.pos))
-        #Hold short positions
+
+        # Hold short positions
         elif self.pos < 0:
-            if bar.close_price >= self.stop_short_price:  # short stop loss,current price>=Stop-Loss Price，trigger stop price
+            if bar.close_price >= self.stop_short_price or bar.close_price <= self.ma_value:  # short stop loss,current price>=Stop-Loss Price，trigger stop price
                 self.cover(bar.close_price + 2, abs(self.pos))
 
         # 发出状态更新事件
         self.put_event()
-
-    def on_5min_bar(self, bar: BarData):
-        """5分钟K线"""
-        pass
 
 
 
