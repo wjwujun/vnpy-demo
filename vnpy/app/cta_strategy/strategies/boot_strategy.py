@@ -75,6 +75,19 @@ class DoubleMa22Strategy(CtaTemplate):
         Callback of new tick data update.
         """
         self.bg.update_tick(tick)
+        # Holding a long position
+        if self.pos > 0:
+            if tick.last_price <= self.stop_long_price  :  # long stop loss,current price <= Stop-Loss Price，trigger stop price
+                self.sell(self.stop_long_price - 2, abs(self.pos))
+            elif tick.last_price <= self.ma_value:
+                self.sell(tick.last_price - 2, abs(self.pos))
+
+        elif self.pos < 0:  # Hold short positions
+            if tick.last_price >= self.stop_short_price :  # short stop loss,current price>=Stop-Loss Price，trigger stop price
+                self.cover(self.stop_short_price + 2, abs(self.pos))
+            elif  tick.last_price >= self.ma_value:
+                self.cover(tick.last_price + 2, abs(self.pos))
+
 
     # ----------------------------------------------------------------------
     def on_bar(self, bar: BarData):
@@ -121,15 +134,6 @@ class DoubleMa22Strategy(CtaTemplate):
                 vt_orderids = self.short(bar.close_price - 2, self.fixed_size)
                 self.current_price = bar.close_price + 2
                 self.vt_orderids.extend(vt_orderids)        #save orderids
-        # Holding a long position
-        elif self.pos > 0:
-            if bar.close_price <= self.stop_long_price or bar.close_price <= self.ma_value:  # long stop loss,current price <= Stop-Loss Price，trigger stop price
-                self.sell(bar.close_price - 2, abs(self.pos))
-
-        # Hold short positions
-        elif self.pos < 0:
-            if bar.close_price >= self.stop_short_price or bar.close_price <= self.ma_value:  # short stop loss,current price>=Stop-Loss Price，trigger stop price
-                self.cover(bar.close_price + 2, abs(self.pos))
 
         # 发出状态更新事件
         self.put_event()
