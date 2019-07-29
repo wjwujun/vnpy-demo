@@ -27,7 +27,6 @@ class OffsetConverter:
             return
 
         holding = self.get_position_holding(position.vt_symbol)
-        print("===========================--------------------cta处理持仓信息的时候调用的方法")
         holding.update_position(position)
 
     #更新交易的数据信息

@@ -43,7 +43,7 @@ class CtaEngine(BaseEngine):
 
     setting_filename = "cta_strategy_setting.json"
     data_filename = "cta_strategy_data.json"
-
+    position_filename="posotion_data.json"
     def __init__(self, main_engine: MainEngine, event_engine: EventEngine):
         """"""
         super(CtaEngine, self).__init__(
@@ -67,19 +67,16 @@ class CtaEngine(BaseEngine):
 
         self.rq_client = None
         self.rq_symbols = set()
-
+        self.tick={}
         self.vt_tradeids = set()    # for filtering duplicate trade
 
         self.offset_converter = OffsetConverter(self.main_engine)
-
-        #self.bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
-        #self.bg = BarGenerator(self.on_bar)
+        self.bg = BarGenerator(self.on_bar)
 
     def init_engine(self):
         """
             初始化策略引擎
         """
-
         #self.init_rqdata()
         self.load_strategy_class()
         self.load_strategy_setting()
@@ -117,6 +114,11 @@ class CtaEngine(BaseEngine):
             关闭CTA策略全部启动
         """
         self.stop_all_strategies()
+    def on_bar(self, bar: BarData):
+        """
+        Callback of new bar data update.
+        """
+        database_manager.save_bar_data([bar])
 
     def register_event(self):
         """
@@ -159,7 +161,9 @@ class CtaEngine(BaseEngine):
         tick = event.data
         #print("-----------------------------------保存-----收到tick的")
         #print(tick)
-
+        database_manager.save_tick_data([tick])
+        self.bg.update_tick(tick)
+        self.tick=tick
         strategies = self.symbol_strategy_map[tick.vt_symbol]
         if not strategies:
             return
@@ -168,9 +172,7 @@ class CtaEngine(BaseEngine):
         for strategy in strategies:
             #收到tick的时候，查询当前的持有情况
             #holding=self.offset_converter.get_position_holding(tick.vt_symbol)
-            # print("-----------------------------------收到tick的时候查询持有情况")
-            # print(holding.long_pos)
-            # print(holding.short_pos)
+            #print("-----------------------------------收到tick的时候查询持有情况")
             if strategy.inited:
                 self.call_strategy_func(strategy, strategy.on_tick, tick)
 
@@ -225,31 +227,26 @@ class CtaEngine(BaseEngine):
         # Update strategy pos before calling on_trade method
         # 在调用on_trade方法之前更新策略pos
         print("处理EVENT_TRADE时候,仓位情况-------------------")
-        print(strategy.volume)
-        print(trade.volume)
         if trade.direction == Direction.LONG:
             strategy.pos += trade.volume
         else:
             strategy.pos -= trade.volume
 
         self.call_strategy_func(strategy, strategy.on_trade, trade)
-
-        # Sync strategy variables to data file
+        # 保存相关策略参数到本地
         self.sync_strategy_data(strategy)
-        print("交易的处理方法+++++++++++++++")
         # Update GUI
         self.put_strategy_event(strategy)
 
     # 持仓数据处理方法
     def process_position_event(self, event: Event):
-
         position = event.data
-        print("-----------------------------策略中持仓信息打印")
-        print(position)
-        #datetime = datetime.strptime(datetime.datetime.now(), "%Y%m%d %H:%M:%S.%f"),
         database_manager.save_position_data([position])
         #更新持仓数据
         self.offset_converter.update_position(position)
+        #将持仓数据保存到本地。
+        sleep(10)
+        save_json(self.position_filename,position)
 
     #账户信息查看
     def process_account_event(self,event:Event):
@@ -363,13 +360,7 @@ class CtaEngine(BaseEngine):
         self,strategy: CtaTemplate,contract: ContractData,direction: Direction,
         offset: Offset,price: float,volume: float,lock: bool):
 
-        print("------------------------------下单")
-        print(contract)
-        print(direction)
-        print(offset)
-        print(price)
-        print(volume)
-        print(lock)
+        # print("------------------------------限价单-send_limit_order")
         return self.send_server_order(
             strategy,
             contract,
@@ -468,12 +459,12 @@ class CtaEngine(BaseEngine):
         price = round_to(price, contract.pricetick)
         volume = round_to(volume, contract.min_volume)
         
-        if stop:
+        if stop:            #stop为true为停止单
             if contract.stop_supported:
                 return self.send_server_stop_order(strategy, contract, direction, offset, price, volume, lock)
             else:
                 return self.send_local_stop_order(strategy, direction, offset, price, volume, lock)
-        else:
+        else:               #否则为市价单
             return self.send_limit_order(strategy, contract, direction, offset, price, volume, lock)
 
     def cancel_order(self, strategy: CtaTemplate, vt_orderid: str):

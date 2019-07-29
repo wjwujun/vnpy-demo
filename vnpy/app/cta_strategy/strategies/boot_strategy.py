@@ -10,13 +10,16 @@ from vnpy.app.cta_strategy import (
     BarGenerator,
     ArrayManager,
 )
+from vnpy.trader.constant import Direction
+from vnpy.trader.utility import load_json, save_json
+
 """
     上开
 """
 
-
 class DoubleMa22Strategy(CtaTemplate):
     author = "wj"
+    position_filename = "posotion_data.json"
 
     # 策略变量
     fixed_size = 1      # 开仓数量
@@ -25,8 +28,10 @@ class DoubleMa22Strategy(CtaTemplate):
     open_count=0        #今日开仓次数
     today=0             #当天时间
 
+
     stop_long_price=0   #多单止损价格
     stop_short_price=0  #空单止损价格
+    ma_value = 0        #5min avgrage
     vt_orderids = []        # 保存委托代码的列表
     # 参数列表，保存了参数的名称
     parameters = ["current_price", "max_open", "open_count",
@@ -42,11 +47,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
         self.am = ArrayManager()
         self.today=time.strftime("%Y-%m-%d", time.localtime())
-
-        # 注意策略类中的可变对象属性（通常是list和dict等），在策略初始化时需要重新创建，
-        # 否则会出现多个策略实例之间数据共享的情况，有可能导致潜在的策略逻辑错误风险，
-        # 策略类中的这些可变对象属性可以选择不写，全都放在__init__下面，写主要是为了阅读
-        # 策略时方便（更多是个编程习惯的选择）
+        self.position = load_json(self.position_filename)
 
     def on_init(self):
         """
@@ -75,21 +76,57 @@ class DoubleMa22Strategy(CtaTemplate):
         Callback of new tick data update.
         """
         self.bg.update_tick(tick)
-        # Holding a long position
+
+        #从本地查询持仓情况
+
+        print("--------------------策略中获取持仓信息")
+        print(tick)
+        print(self.position)
+        #防止服务崩掉昨日持仓还在，看是否有昨日持仓，如果有看看是否满足平仓条件，
+        if self.position:
+            if self.position.direction== Direction.LONG:
+                if  tick.last_price <= self.position.price:         #buy,the latest_price less than current_price,sell
+                    vt_orderids = self.sell(tick.last_price - 2, abs(self.pos))
+                    print(vt_orderids)
+                    save_json(self.position_filename, {})
+                else:
+                    self.pos = self.position.volume
+                    self.current_price = self.position.price
+            else:
+                if tick.last_price >= self.position.price:    #short,  the latest_price more than the current_price,cover
+                    vt_orderids = self.cover(tick.last_price + 2, abs(self.pos))
+                    print(vt_orderids)
+                    save_json(self.position_filename, {})
+                else:
+                    self.pos=-self.position.volume
+                    self.current_price = self.position.price
+
+
+
         if self.pos > 0:
             if tick.last_price <= self.stop_long_price  :  # long stop loss,current price <= Stop-Loss Price，trigger stop price
-                self.sell(self.stop_long_price - 2, abs(self.pos))
-            elif tick.last_price <= self.ma_value:
-                self.sell(tick.last_price - 2, abs(self.pos))
+                vt_orderids=self.sell(self.stop_long_price - 2, abs(self.pos))
+                print(vt_orderids)
+                save_json(self.position_filename, {})
+            elif self.ma_value !=0 and tick.last_price <= self.ma_value:       #止损价格触碰，5min avgerage
+                vt_orderids =self.sell(tick.last_price - 2, abs(self.pos))
+                print(vt_orderids)
+                save_json(self.position_filename, {})
+
+
+
+
 
         elif self.pos < 0:  # Hold short positions
             if tick.last_price >= self.stop_short_price :  # short stop loss,current price>=Stop-Loss Price，trigger stop price
-                self.cover(self.stop_short_price + 2, abs(self.pos))
-            elif  tick.last_price >= self.ma_value:
-                self.cover(tick.last_price + 2, abs(self.pos))
+                vt_orderids =self.cover(self.stop_short_price + 2, abs(self.pos))
+                print(vt_orderids)
+                save_json(self.position_filename, {})
+            elif  self.ma_value!=0  and  tick.last_price >= self.ma_value:
+                vt_orderids=self.cover(tick.last_price + 2, abs(self.pos))
+                print(vt_orderids)
+                save_json(self.position_filename, {})
 
-
-    # ----------------------------------------------------------------------
     def on_bar(self, bar: BarData):
         """
         Callback of new bar data update.
