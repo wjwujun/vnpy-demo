@@ -75,7 +75,6 @@ class DoubleMa22Strategy(CtaTemplate):
         """
         Callback of new tick data update.
         """
-        """
         self.bg.update_tick(tick)
 
         #从本地查询持仓情况
@@ -86,15 +85,15 @@ class DoubleMa22Strategy(CtaTemplate):
         #防止服务崩掉昨日持仓还在，看是否有昨日持仓，如果有看看是否满足平仓条件，
         if self.position:
             if self.position.direction== Direction.LONG:
-                if  self.position.price <= tick.last_price:
-                    vt_orderids = self.sell(tick.last_price - 2, abs(self.pos))  # 昨日持仓的价格小于，最新价格
+                if  tick.last_price <= self.position.price:         #buy,the latest_price less than current_price,sell
+                    vt_orderids = self.sell(tick.last_price - 2, abs(self.pos))
                     print(vt_orderids)
                     save_json(self.position_filename, {})
                 else:
                     self.pos = self.position.volume
                     self.current_price = self.position.price
             else:
-                if self.position.price <= tick.last_price:
+                if tick.last_price >= self.position.price:    #short,  the latest_price more than the current_price,cover
                     vt_orderids = self.cover(tick.last_price + 2, abs(self.pos))
                     print(vt_orderids)
                     save_json(self.position_filename, {})
