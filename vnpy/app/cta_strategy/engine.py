@@ -51,6 +51,7 @@ class CtaEngine(BaseEngine):
 
         self.strategy_setting = {}  # strategy_name: dict
         self.strategy_data = {}     # strategy_name: dict
+        self.position_data = {"volume":0}     # strategy_name: dict
 
         self.classes = {}           # class_name: stategy_class
         self.strategies = {}        # strategy_name: strategy
@@ -241,12 +242,26 @@ class CtaEngine(BaseEngine):
     # 持仓数据处理方法
     def process_position_event(self, event: Event):
         position = event.data
-        database_manager.save_position_data([position])
-        #更新持仓数据
+
+        #update holding position data
         self.offset_converter.update_position(position)
-        #将持仓数据保存到本地。
-        sleep(10)
-        save_json(self.position_filename,position)
+
+        if self.position_data['volume'] != position.volume:
+            #save data
+            database_manager.save_position_data([position])
+
+            self.position_data['symbol']=position.symbol
+            if position.direction==Direction.LONG:
+                self.position_data['direction']="long"
+            else:
+                self.position_data['direction']="short"
+            self.position_data['volume']=position.volume
+            self.position_data['price']=position.price
+            self.position_data['yd_volume']=position.yd_volume
+            self.position_data['pnl']=position.pnl
+            self.position_data['frozen']=position.frozen
+            #将持仓数据保存到本地。
+            save_json(self.position_filename,self.position_data)
 
     #账户信息查看
     def process_account_event(self,event:Event):
