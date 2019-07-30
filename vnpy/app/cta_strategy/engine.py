@@ -51,7 +51,7 @@ class CtaEngine(BaseEngine):
 
         self.strategy_setting = {}  # strategy_name: dict
         self.strategy_data = {}     # strategy_name: dict
-        self.position_data = {"volume":0}     # strategy_name: dict
+        self.position_data = {"volume":0,"yd_volume":0}     # strategy_name: dict
 
         self.classes = {}           # class_name: stategy_class
         self.strategies = {}        # strategy_name: strategy
@@ -73,6 +73,7 @@ class CtaEngine(BaseEngine):
 
         self.offset_converter = OffsetConverter(self.main_engine)
         self.bg = BarGenerator(self.on_bar)
+        self.balance_now=0.0
 
     def init_engine(self):
         """
@@ -245,8 +246,11 @@ class CtaEngine(BaseEngine):
 
         #update holding position data
         self.offset_converter.update_position(position)
-
-        if self.position_data['volume'] != position.volume:
+        # print("1111111111111111111111111")
+        # print(position)
+        # print(self.position_data['volume'])
+        # print(position.volume)
+        if self.position_data['volume'] != position.volume or self.position_data['yd_volume'] != position.yd_volume :
             #save data
             database_manager.save_position_data([position])
 
@@ -269,8 +273,10 @@ class CtaEngine(BaseEngine):
         #print("账户信息查看=================================")
         #print(account)
         #账户数据插入mysql
-        sleep(60)
-        database_manager.save_account_data([account])
+
+        if account.balance != self.balance_now:
+            self.balance_now=account.balance
+            database_manager.save_account_data([account])
 
 
 
@@ -375,7 +381,7 @@ class CtaEngine(BaseEngine):
         self,strategy: CtaTemplate,contract: ContractData,direction: Direction,
         offset: Offset,price: float,volume: float,lock: bool):
 
-        # print("------------------------------限价单-send_limit_order")
+        print("------------------------------限价单-send_limit_order")
         return self.send_server_order(
             strategy,
             contract,

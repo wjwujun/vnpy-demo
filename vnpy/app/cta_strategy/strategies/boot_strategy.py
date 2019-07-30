@@ -82,26 +82,27 @@ class DoubleMa22Strategy(CtaTemplate):
         self.bg.update_tick(tick)
 
         #从本地查询持仓情况
-
-
+        print("boot_strategy ------ receive data")
+        print(tick)
         #print(self.position)
         #防止服务崩掉昨日持仓还在，看是否有昨日持仓，如果有看看是否满足平仓条件，
 
         if self.position:
             if self.position['direction'] == "long":
                 if  tick.last_price <= self.position['price']:         #buy, the latest_price less than current_price,sell
-                    vt_orderids = self.yd_sell(tick.last_price - 2, abs(self.position['volume']))
-                    print("--------------position")
-                    print(vt_orderids)
+                    self.sell(tick.last_price - 2, abs(self.position['volume']))
+                    print("--------------position___sell")
+                    self.position_filename={}
                     save_json(self.position_filename, {})
+
                 else:
                     self.pos = self.position['volume']
                     self.current_price = self.position['price']
             else:
                 if tick.last_price >= self.position['price']:    #short,  the latest_price more than the current_price,cover
-                    vt_orderids = self.yd_cover(tick.last_price + 2, abs(self.position['volume']))
-                    print("--------------position")
-                    print(vt_orderids)
+                    self.cover(tick.last_price + 2, abs(self.position['volume']))
+                    print("--------------position_cover")
+                    self.position_filename={}
                     save_json(self.position_filename, {})
                 else:
                     self.pos=-self.position['volume']
