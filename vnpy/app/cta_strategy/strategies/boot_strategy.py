@@ -48,6 +48,10 @@ class DoubleMa22Strategy(CtaTemplate):
         self.am = ArrayManager()
         self.today=time.strftime("%Y-%m-%d", time.localtime())
         self.position = load_json(self.position_filename)
+        # print("------------boot")
+        # print(self.position)
+        # print(self.position['volume'])
+
 
     def on_init(self):
         """
@@ -78,54 +82,45 @@ class DoubleMa22Strategy(CtaTemplate):
         self.bg.update_tick(tick)
 
         #从本地查询持仓情况
-
-        print("--------------------策略中获取持仓信息")
+        print("boot_strategy ------ receive data")
         print(tick)
-        print(self.position)
+        #print(self.position)
         #防止服务崩掉昨日持仓还在，看是否有昨日持仓，如果有看看是否满足平仓条件，
+
         if self.position:
-            if self.position.direction== Direction.LONG:
-                if  tick.last_price <= self.position.price:         #buy,the latest_price less than current_price,sell
-                    vt_orderids = self.sell(tick.last_price - 2, abs(self.pos))
-                    print(vt_orderids)
-                    save_json(self.position_filename, {})
+            if self.position['direction'] == "long":
+                if  tick.last_price <= self.position['price']:         #buy, the latest_price less than current_price,sell
+                    self.sell(tick.last_price - 2, abs(self.position['volume']))
+                    print("--------------position___sell")
+
                 else:
-                    self.pos = self.position.volume
-                    self.current_price = self.position.price
+                    self.pos = self.position['volume']
+                    self.current_price = self.position['price']
             else:
-                if tick.last_price >= self.position.price:    #short,  the latest_price more than the current_price,cover
-                    vt_orderids = self.cover(tick.last_price + 2, abs(self.pos))
-                    print(vt_orderids)
-                    save_json(self.position_filename, {})
+                if tick.last_price >= self.position['price']:    #short,  the latest_price more than the current_price,cover
+                    self.cover(tick.last_price + 2, abs(self.position['volume']))
+                    print("--------------position_cover")
                 else:
-                    self.pos=-self.position.volume
-                    self.current_price = self.position.price
+                    self.pos=-self.position['volume']
+                    self.current_price = self.position['price']
+
+            self.clearData()
 
 
 
         if self.pos > 0:
             if tick.last_price <= self.stop_long_price  :  # long stop loss,current price <= Stop-Loss Price，trigger stop price
-                vt_orderids=self.sell(self.stop_long_price - 2, abs(self.pos))
-                print(vt_orderids)
-                save_json(self.position_filename, {})
-            elif self.ma_value !=0 and tick.last_price <= self.ma_value:       #止损价格触碰，5min avgerage
-                vt_orderids =self.sell(tick.last_price - 2, abs(self.pos))
-                print(vt_orderids)
-                save_json(self.position_filename, {})
-
-
-
-
-
+                self.sell(self.stop_long_price - 2, abs(self.pos))
+            elif self.ma_value !=0 and tick.last_price <= self.ma_value:
+                self.sell(tick.last_price - 2, abs(self.pos))
+            self.clearData()
         elif self.pos < 0:  # Hold short positions
             if tick.last_price >= self.stop_short_price :  # short stop loss,current price>=Stop-Loss Price，trigger stop price
-                vt_orderids =self.cover(self.stop_short_price + 2, abs(self.pos))
-                print(vt_orderids)
-                save_json(self.position_filename, {})
+                self.cover(self.stop_short_price + 2, abs(self.pos))
             elif  self.ma_value!=0  and  tick.last_price >= self.ma_value:
-                vt_orderids=self.cover(tick.last_price + 2, abs(self.pos))
-                print(vt_orderids)
-                save_json(self.position_filename, {})
+                self.cover(tick.last_price + 2, abs(self.pos))
+
+            self.clearData()
 
     def on_bar(self, bar: BarData):
         """
@@ -171,13 +166,16 @@ class DoubleMa22Strategy(CtaTemplate):
                 vt_orderids = self.short(bar.close_price - 2, self.fixed_size)
                 self.current_price = bar.close_price + 2
                 self.vt_orderids.extend(vt_orderids)        #save orderids
+            self.clearData()
 
         # 发出状态更新事件
         self.put_event()
 
 
 
-
+    def clearData(self):
+        self.position = {}
+        save_json(self.position_filename, {})
 
 
     def on_order(self, order: OrderData):
