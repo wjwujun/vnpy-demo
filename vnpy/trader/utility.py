@@ -273,7 +273,7 @@ class ArrayManager(object):
     2. 计算技术指标值
     """
 
-    def __init__(self, size=100):
+    def __init__(self, size=20):
         """Constructor"""
         self.count = 0
         self.size = size
@@ -290,6 +290,8 @@ class ArrayManager(object):
         Update new bar data into array manager.
         """
         self.count += 1
+        print("=-==================更新am的时候inited的状态")
+        print(self.inited)
         if not self.inited and self.count >= self.size:
             self.inited = True
 

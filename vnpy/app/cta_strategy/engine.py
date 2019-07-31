@@ -51,7 +51,7 @@ class CtaEngine(BaseEngine):
 
         self.strategy_setting = {}  # strategy_name: dict
         self.strategy_data = {}     # strategy_name: dict
-        self.position_data = {"volume":0,"yd_volume":0}     # strategy_name: dict
+        self.position_data = {"pnl":0}     # strategy_name: dict
 
         self.classes = {}           # class_name: stategy_class
         self.strategies = {}        # strategy_name: strategy
@@ -174,7 +174,8 @@ class CtaEngine(BaseEngine):
         for strategy in strategies:
             #收到tick的时候，查询当前的持有情况
             #holding=self.offset_converter.get_position_holding(tick.vt_symbol)
-            #print("-----------------------------------收到tick的时候查询持有情况")
+            print("-----------------------------------收到tick的时候查询持有情况")
+            print(strategy.inited)
             if strategy.inited:
                 self.call_strategy_func(strategy, strategy.on_tick, tick)
 
@@ -246,11 +247,11 @@ class CtaEngine(BaseEngine):
 
         #update holding position data
         self.offset_converter.update_position(position)
-        # print("1111111111111111111111111")
-        # print(position)
+        print("1111111111111111111111111")
+        print(position)
         # print(self.position_data['volume'])
         # print(position.volume)
-        if self.position_data['volume'] != position.volume or self.position_data['yd_volume'] != position.yd_volume :
+        if self.position_data['pnl'] != position.pnl:
             #save data
             database_manager.save_position_data([position])
 
@@ -642,7 +643,8 @@ class CtaEngine(BaseEngine):
 
             # Put event to update init completed status.
             strategy.inited = True
-
+            print("-----------初始化的时候策略的时候，inited的状态")
+            print(strategy.inited)
             self.put_strategy_event(strategy)
             self.write_log(f"{strategy_name}初始化完成")
         

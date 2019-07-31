@@ -109,7 +109,6 @@ class OrderData(BaseData):
     symbol: str
     exchange: Exchange
     orderid: str
-    datetime: datetime
     type: OrderType = OrderType.LIMIT
     direction: Direction = ""
     offset: Offset = Offset.NONE

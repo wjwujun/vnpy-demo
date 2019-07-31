@@ -48,8 +48,8 @@ class DoubleMa22Strategy(CtaTemplate):
         self.am = ArrayManager()
         self.today=time.strftime("%Y-%m-%d", time.localtime())
         self.position = load_json(self.position_filename)
-        # print("------------boot")
-        # print(self.position)
+        print("------------boot")
+        print(self.position)
         # print(self.position['volume'])
 
 
@@ -58,7 +58,7 @@ class DoubleMa22Strategy(CtaTemplate):
         Callback when strategy is inited.
         """
         self.write_log("策略初始化")
-        self.load_bar(10)       #初始化加载数据
+        self.load_bar(1)       #初始化加载数据
 
     def on_start(self):
         """
@@ -84,7 +84,9 @@ class DoubleMa22Strategy(CtaTemplate):
         #从本地查询持仓情况
         print("boot_strategy ------ receive data")
         print(tick)
-        #print(self.position)
+        print("------------------当前仓位")
+        print(self.pos)
+        print(self.position)
         #防止服务崩掉昨日持仓还在，看是否有昨日持仓，如果有看看是否满足平仓条件，
 
         if self.position:
@@ -92,7 +94,7 @@ class DoubleMa22Strategy(CtaTemplate):
                 if  tick.last_price <= self.position['price']:         #buy, the latest_price less than current_price,sell
                     self.sell(tick.last_price - 2, abs(self.position['volume']))
                     print("--------------position___sell")
-
+                    self.clearData()
                 else:
                     self.pos = self.position['volume']
                     self.current_price = self.position['price']
@@ -100,11 +102,12 @@ class DoubleMa22Strategy(CtaTemplate):
                 if tick.last_price >= self.position['price']:    #short,  the latest_price more than the current_price,cover
                     self.cover(tick.last_price + 2, abs(self.position['volume']))
                     print("--------------position_cover")
+                    self.clearData()
+
                 else:
                     self.pos=-self.position['volume']
                     self.current_price = self.position['price']
 
-            self.clearData()
 
 
 
@@ -113,14 +116,12 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.sell(self.stop_long_price - 2, abs(self.pos))
             elif self.ma_value !=0 and tick.last_price <= self.ma_value:
                 self.sell(tick.last_price - 2, abs(self.pos))
-            self.clearData()
         elif self.pos < 0:  # Hold short positions
             if tick.last_price >= self.stop_short_price :  # short stop loss,current price>=Stop-Loss Price，trigger stop price
                 self.cover(self.stop_short_price + 2, abs(self.pos))
             elif  self.ma_value!=0  and  tick.last_price >= self.ma_value:
                 self.cover(tick.last_price + 2, abs(self.pos))
 
-            self.clearData()
 
     def on_bar(self, bar: BarData):
         """
@@ -139,6 +140,10 @@ class DoubleMa22Strategy(CtaTemplate):
         self.vt_orderids.clear()
         # 保存K线数据
         self.am.update_bar(bar)
+        print("---------------当前均线更新")
+        print(self.am.count)
+        print(self.am.size)
+        print(self.am.inited)
         if not self.am.inited:
             return
 
@@ -153,20 +158,24 @@ class DoubleMa22Strategy(CtaTemplate):
 
         # Calculator the 5min moving average
         self.ma_value = self.am.sma(5)
-
+        print("----------当前均线价格")
+        print(self.ma_value)
         # 当前无仓位
         if self.pos == 0:
             if bar.close_price > self.ma_value:  # The current price is above the 5min moving average，Long positions
+                print("-----------------open position buy")
+                print(bar.close_price + 2)
                 self.stop_long_price = bar.close_price - 20  # long stop  price
-                vt_orderids = self.buy(bar.close_price + 2, self.fixed_size)
                 self.current_price = bar.close_price + 2
-                self.vt_orderids.extend(vt_orderids)        #save orderids
+                self.buy(bar.close_price + 2, self.fixed_size)
+
             elif bar.close_price < self.ma_value:  # The current price is above the 5min moving average，Short positions
+                print("-----------------open position short")
+                print(bar.close_price - 2)
                 self.stop_long_price = bar.close_price + 20  # short stop  price
-                vt_orderids = self.short(bar.close_price - 2, self.fixed_size)
                 self.current_price = bar.close_price + 2
-                self.vt_orderids.extend(vt_orderids)        #save orderids
-            self.clearData()
+                self.short(bar.close_price - 2, self.fixed_size)
+
 
         # 发出状态更新事件
         self.put_event()
