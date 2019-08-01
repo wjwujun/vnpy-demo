@@ -77,25 +77,6 @@ vnctptd = Extension(
     depends=[],
     language="cpp",
 )
-vnoes = Extension(
-    "vnpy.api.oes.vnoes",
-    [
-        "vnpy/api/oes/vnoes/generated_files/classes_1.cpp",
-        "vnpy/api/oes/vnoes/generated_files/classes_2.cpp",
-        "vnpy/api/oes/vnoes/generated_files/module.cpp",
-    ],
-    include_dirs=["vnpy/api/oes/include",
-                  "vnpy/api/oes/vnoes", ],
-    define_macros=[("BRIGAND_NO_BOOST_SUPPORT", "1")],
-    undef_macros=[],
-    library_dirs=["vnpy/api/oes/libs"],
-    libraries=["oes_api"],
-    extra_compile_args=compiler_flags,
-    extra_link_args=extra_link_args,
-    runtime_library_dirs=["$ORIGIN"],
-    depends=[],
-    language="cpp",
-)
 
 if platform.system() == "Windows":
     # use pre-built pyd for windows ( support python 3.7 only )
