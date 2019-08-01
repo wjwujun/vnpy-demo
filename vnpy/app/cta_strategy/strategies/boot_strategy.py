@@ -158,12 +158,20 @@ class DoubleMa22Strategy(CtaTemplate):
 
         # Determine whether positions can also be opened on the day
         now = time.strftime("%Y-%m-%d", time.localtime())
-        if (self.open_count > self.max_open):
-            if (self.today == now):
+        print("开仓数量**************")
+        print(self.open_count)
+        print(self.max_open)
+
+        if self.today == now:
+            if self.open_count == self.max_open:
+                print("已經達到5次最大open")
+                print(self.open_count)
                 return
+            print("2222222222222")
         else:
             self.today = time.strftime("%Y-%m-%d", time.localtime())
-            self.open_count = 0
+            self.open_count=0
+            print("33333333333333")
 
         # Calculator the 5min moving average
         self.ma_value = self.am.sma(5)
@@ -176,16 +184,19 @@ class DoubleMa22Strategy(CtaTemplate):
                 print(bar.close_price + 2)
                 self.stop_long_price = bar.close_price - 20  # long stop  price
                 self.current_price = bar.close_price + 2
-                open_count+=1
-                self.buy(bar.close_price + 2, self.fixed_size)
+                orderId=self.buy(bar.close_price + 2, self.fixed_size)
+                if orderId:
+                    self.open_count  += 1
 
             elif bar.close_price < self.ma_value:  # The current price is above the 5min moving average，Short positions
                 print("-----------------open position short")
                 print(bar.close_price - 2)
                 self.stop_short_price = bar.close_price + 20  # short stop  price
                 self.current_price = bar.close_price + 2
-                open_count += 1
-                self.short(bar.close_price - 2, self.fixed_size)
+                orderId=self.short(bar.close_price - 2, self.fixed_size)
+                if orderId:
+                    self.open_count  += 1
+
 
 
         # 发出状态更新事件
