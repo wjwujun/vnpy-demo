@@ -489,9 +489,6 @@ class CtpTdApi(TdApi):
 
         # Get buffered position object
         key = f"{data['InstrumentID'], data['PosiDirection']}"
-        print("111111111111111111111111--------持仓信息回调")
-        print(data)
-        # print(key)
         position = self.positions.get(key, None)
         if not position:
             position = PositionData(

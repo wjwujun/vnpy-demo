@@ -229,7 +229,6 @@ class CtaEngine(BaseEngine):
 
         # Update strategy pos before calling on_trade method
         # 在调用on_trade方法之前更新策略pos
-        print("处理EVENT_TRADE时候,仓位情况-------------------")
         if trade.direction == Direction.LONG:
             strategy.pos += trade.volume
         else:
@@ -249,9 +248,7 @@ class CtaEngine(BaseEngine):
         self.offset_converter.update_position(position)
         print("1111111111111111111111111")
         print(position)
-        # print(self.position_data['volume'])
-        # print(position.volume)
-        if self.position_data['pnl'] != position.pnl:
+        if self.position_data['pnl'] != position.pnl and (position.volume!=0 or position.yd_volume!=0):
             #save data
             database_manager.save_position_data([position])
 
