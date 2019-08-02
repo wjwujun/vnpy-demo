@@ -156,8 +156,8 @@ class DoubleMa44Strategy(CtaTemplate):
 
         # Determine whether positions can also be opened on the day
         now = time.strftime("%Y-%m-%d", time.localtime())
-        if (self.open_count > self.max_open):
-            if (self.today == now):
+        if self.today == now:
+            if self.open_count >= self.max_open:
                 return
         else:
             self.today = time.strftime("%Y-%m-%d", time.localtime())
@@ -174,7 +174,7 @@ class DoubleMa44Strategy(CtaTemplate):
                 print(bar.close_price + 2)
                 self.stop_long_price = bar.close_price - 20  # long stop  price
                 self.current_price = bar.close_price + 2
-                open_count+=1
+                self.open_count+=1
                 self.buy(bar.close_price + 2, self.fixed_size)
 
             elif bar.close_price < self.ma_value:  # The current price is above the 5min moving average，Short positions
@@ -182,7 +182,7 @@ class DoubleMa44Strategy(CtaTemplate):
                 print(bar.close_price - 2)
                 self.stop_short_price = bar.close_price + 20  # short stop  price
                 self.current_price = bar.close_price + 2
-                open_count += 1
+                self.open_count += 1
                 self.short(bar.close_price - 2, self.fixed_size)
 
 

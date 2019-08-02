@@ -45,6 +45,8 @@ class DoubleMa22Strategy(CtaTemplate):
         )
 
         self.bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
+
+        # 时间序列容器：计算技术指标用
         self.am = ArrayManager()
         self.today=time.strftime("%Y-%m-%d", time.localtime())
         self.position = load_json(self.position_filename)
@@ -113,16 +115,15 @@ class DoubleMa22Strategy(CtaTemplate):
 
 
         if self.pos > 0:
-            if tick.last_price <= self.stop_long_price  :  # long stop loss,current price <= Stop-Loss Price，trigger stop price
+            if tick.last_price <= self.stop_long_price and self.stop_long_price!=0 :  # long stop loss,current price <= Stop-Loss Price，trigger stop price
                 print("==========long 平仓 11")
                 print(self.stop_long_price - 2)
                 self.sell(self.stop_long_price - 2, abs(self.pos))
             elif self.ma_value !=0 and tick.last_price <= self.ma_value:
                 print("==========long 平仓 22")
-                print(self.ma_value)
                 self.sell(tick.last_price - 2, abs(self.pos))
         elif self.pos < 0:  # Hold short positions
-            if tick.last_price >= self.stop_short_price :  # short stop loss,current price>=Stop-Loss Price，trigger stop price
+            if tick.last_price >= self.stop_short_price and self.stop_short_price!=0:  # short stop loss,current price>=Stop-Loss Price，trigger stop price
                 print("==========short 平仓11")
                 print(self.stop_short_price + 2)
                 self.cover(self.stop_short_price + 2, abs(self.pos))
@@ -163,7 +164,7 @@ class DoubleMa22Strategy(CtaTemplate):
         print(self.max_open)
 
         if self.today == now:
-            if self.open_count == self.max_open:
+            if self.open_count >= self.max_open:
                 print("已經達到5次最大open")
                 print(self.open_count)
                 return
