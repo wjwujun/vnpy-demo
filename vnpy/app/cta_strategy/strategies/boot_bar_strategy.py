@@ -89,12 +89,6 @@ class DoubleMa44Strategy(CtaTemplate):
         self.bg.update_bar(bar)
 
         # 从本地查询持仓情况
-        print("boot_strategy ------ receive data")
-        print(bar)
-        print("------------------当前仓位")
-        print(self.pos)
-        print(self.position)
-        print(self.ma_value)
         # 防止服务崩掉昨日持仓还在，看是否有昨日持仓，如果有看看是否满足平仓条件，
 
         if self.position:
@@ -102,38 +96,27 @@ class DoubleMa44Strategy(CtaTemplate):
                 self.stop_long_price = self.position['price'] - 20
                 if bar.close_price <= self.position['price']:  # buy, the latest_price less than current_price,sell
                     self.sell(bar.close_price - 2, abs(self.position['volume']))
-                    print("--------------position___sell")
                 else:
                     self.pos = self.position['volume']
                     self.current_price = self.position['price']
             else:
                 self.stop_short_price = self.position['price'] + 20
-                if bar.close_price >= self.position[
-                    'price']:  # short,  the latest_price more than the current_price,cover
+                if bar.close_price >= self.position['price']:  # short,  the latest_price more than the current_price,cover
                     self.cover(bar.close_price + 2, abs(self.position['volume']))
-                    print("--------------position_cover")
                 else:
                     self.pos = -self.position['volume']
                     self.current_price = self.position['price']
             self.clearData()
 
         if self.pos > 0:
-            if bar.close_price <= self.stop_long_price:  # long stop loss,current price <= Stop-Loss Price，trigger stop price
-                print("==========long 平仓 11")
-                print(self.stop_long_price - 2)
+            if bar.close_price <= self.stop_long_price and self.stop_long_price != 0:  # long stop loss,current price <= Stop-Loss Price，trigger stop price
                 self.sell(self.stop_long_price - 2, abs(self.pos))
             elif self.ma_value != 0 and bar.close_price <= self.ma_value:
-                print("==========long 平仓 22")
-                print(self.ma_value)
                 self.sell(bar.close_price - 2, abs(self.pos))
         elif self.pos < 0:  # Hold short positions
-            if bar.close_price >= self.stop_short_price:  # short stop loss,current price>=Stop-Loss Price，trigger stop price
-                print("==========short 平仓11")
-                print(self.stop_short_price + 2)
+            if bar.close_price >= self.stop_short_price and self.stop_short_price != 0:  # short stop loss,current price>=Stop-Loss Price，trigger stop price
                 self.cover(self.stop_short_price + 2, abs(self.pos))
             elif self.ma_value != 0 and bar.close_price >= self.ma_value:
-                print("==========short 平仓22")
-                print(self.ma_value)
                 self.cover(bar.close_price + 2, abs(self.pos))
 
 
