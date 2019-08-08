@@ -174,8 +174,6 @@ class CtaEngine(BaseEngine):
         for strategy in strategies:
             #收到tick的时候，查询当前的持有情况
             #holding=self.offset_converter.get_position_holding(tick.vt_symbol)
-            print("-----------------------------------收到tick的时候查询持有情况")
-            print(strategy.inited)
             if strategy.inited:
                 self.call_strategy_func(strategy, strategy.on_tick, tick)
 
@@ -246,7 +244,7 @@ class CtaEngine(BaseEngine):
 
         #update holding position data
         self.offset_converter.update_position(position)
-        print("1111111111111111111111111")
+        # print("1111111111111111111111111")
         print(position)
         if self.position_data['pnl'] != position.pnl and (position.volume!=0 or position.yd_volume!=0):
             #save data
@@ -640,8 +638,7 @@ class CtaEngine(BaseEngine):
 
             # Put event to update init completed status.
             strategy.inited = True
-            print("-----------初始化的时候策略的时候，inited的状态")
-            print(strategy.inited)
+            # ==========================================交易状态更新回调
             self.put_strategy_event(strategy)
             self.write_log(f"{strategy_name}初始化完成")
         

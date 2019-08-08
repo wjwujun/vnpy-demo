@@ -658,8 +658,8 @@ class CtpTdApi(TdApi):
             time=data["TradeTime"],
             gateway_name=self.gateway_name
         )
-        print("==========================================交易状态更新回调")
-        print(trade)
+        # print("==========================================交易状态更新回调")
+        # print(trade)
         self.gateway.on_trade(trade)        
     
     def connect(
