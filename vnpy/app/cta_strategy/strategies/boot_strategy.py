@@ -24,7 +24,7 @@ class DoubleMa22Strategy(CtaTemplate):
     # 策略变量
     fixed_size = 1      # 开仓数量
     current_price=0     # 下单价格
-    max_open=5          #每天最大开仓次数
+    max_open=4          #每天最大开仓次数
     open_count=0        #今日开仓次数
 
 
@@ -49,7 +49,6 @@ class DoubleMa22Strategy(CtaTemplate):
         self.am = ArrayManager()
         self.today=time.strftime("%Y-%m-%d", time.localtime())
         self.position = load_json(self.position_filename)
-        # print(self.position['volume'])
 
 
     def on_init(self):
