@@ -94,7 +94,7 @@ def run_parent():
         trading = True
 
         # 判断当前处于的时间段
-        """
+
         if (
             (current_time >= DAY_START and current_time <= DAY_END)
             or (current_time >= NIGHT_START)
@@ -104,7 +104,7 @@ def run_parent():
 
         if (datetime.today().weekday() == 5  and current_time > NIGHT_END) or datetime.today().weekday() == 6:
             trading = False
-        """
+
 
         # 记录时间则需要启动子进程
         if trading and child_process is None:
