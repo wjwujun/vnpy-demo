@@ -377,7 +377,7 @@ class CtaEngine(BaseEngine):
         self,strategy: CtaTemplate,contract: ContractData,direction: Direction,
         offset: Offset,price: float,volume: float,lock: bool):
 
-        print("------------------------------限价单-send_limit_order")
+        #print("------------------------------限价单-send_limit_order")
         return self.send_server_order(
             strategy,
             contract,
@@ -680,7 +680,7 @@ class CtaEngine(BaseEngine):
 
         # Sync strategy variables to data file
         self.sync_strategy_data(strategy)
-        print("停止一个cta策略+++++++++++++++++++++++++")
+        # print("停止一个cta策略+++++++++++++++++++++++++")
         # Update GUI
         self.put_strategy_event(strategy)
 
@@ -692,7 +692,7 @@ class CtaEngine(BaseEngine):
         strategy.update_setting(setting)
 
         self.update_strategy_setting(strategy_name, setting)
-        print("修改一个策略里面的参数+++++++++++++++++++++++++")
+        # print("修改一个策略里面的参数+++++++++++++++++++++++++")
         self.put_strategy_event(strategy)
 
     def remove_strategy(self, strategy_name: str):
