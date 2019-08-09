@@ -79,7 +79,7 @@ class CtaEngine(BaseEngine):
         """
             初始化策略引擎
         """
-        #self.init_rqdata()
+        self.init_rqdata()
         self.load_strategy_class()
         self.load_strategy_setting()
         self.load_strategy_data()

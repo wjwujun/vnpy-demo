@@ -33,8 +33,7 @@ class DoubleMa22Strategy(CtaTemplate):
     ma_value = 0        #5min avgrage
     vt_orderids = []        # 保存委托代码的列表
     # 参数列表，保存了参数的名称
-    parameters = ["current_price", "max_open", "open_count",
-                  "today", "fixed_size"]
+    parameters = ["current_price", "max_open", "open_count","fixed_size"]
 
 
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
