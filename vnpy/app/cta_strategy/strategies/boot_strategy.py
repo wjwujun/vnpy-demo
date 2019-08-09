@@ -82,22 +82,22 @@ class DoubleMa22Strategy(CtaTemplate):
         #从本地查询持仓情况
         #防止服务崩掉昨日持仓还在，看是否有昨日持仓，如果有看看是否满足平仓条件，
 
-        if self.position:
-            if self.position['direction'] == "long":
-                self.stop_long_price = self.position['price']-20
-                if  tick.last_price <= self.position['price']:         #buy, the latest_price less than current_price,sell
-                    self.sell(tick.last_price - 2, abs(self.position['volume']))
-                else:
-                    self.pos = self.position['volume']
-                    self.current_price = self.position['price']
-            else:
-                self.stop_short_price = self.position['price'] + 20
-                if tick.last_price >= self.position['price']:    #short,  the latest_price more than the current_price,cover
-                    self.cover(tick.last_price + 2, abs(self.position['volume']))
-                else:
-                    self.pos=-self.position['volume']
-                    self.current_price = self.position['price']
-            self.clearData()
+        # if self.position:
+        #     if self.position['direction'] == "long":
+        #         self.stop_long_price = self.position['price']-20
+        #         if  tick.last_price <= self.position['price']:         #buy, the latest_price less than current_price,sell
+        #             self.sell(tick.last_price - 2, abs(self.position['volume']))
+        #         else:
+        #             self.pos = self.position['volume']
+        #             self.current_price = self.position['price']
+        #     else:
+        #         self.stop_short_price = self.position['price'] + 20
+        #         if tick.last_price >= self.position['price']:    #short,  the latest_price more than the current_price,cover
+        #             self.cover(tick.last_price + 2, abs(self.position['volume']))
+        #         else:
+        #             self.pos=-self.position['volume']
+        #             self.current_price = self.position['price']
+        #     self.clearData()
 
 
 

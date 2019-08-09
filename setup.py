@@ -84,7 +84,7 @@ if platform.system() == "Windows":
 elif platform.system() == "Darwin":
     ext_modules = []
 else:
-    ext_modules = [vnctptd, vnctpmd, vnoes]
+    ext_modules = [vnctptd, vnctpmd]
 
 pkgs = find_packages()
 
