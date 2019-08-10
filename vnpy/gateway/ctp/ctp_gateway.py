@@ -489,9 +489,6 @@ class CtpTdApi(TdApi):
 
         # Get buffered position object
         key = f"{data['InstrumentID'], data['PosiDirection']}"
-        print("111111111111111111111111--------持仓信息回调")
-        print(data)
-        # print(key)
         position = self.positions.get(key, None)
         if not position:
             position = PositionData(
@@ -661,8 +658,8 @@ class CtpTdApi(TdApi):
             time=data["TradeTime"],
             gateway_name=self.gateway_name
         )
-        print("==========================================交易状态更新回调")
-        print(trade)
+        # print("==========================================交易状态更新回调")
+        # print(trade)
         self.gateway.on_trade(trade)        
     
     def connect(

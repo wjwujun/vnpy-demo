@@ -51,7 +51,7 @@ class CtaEngine(BaseEngine):
 
         self.strategy_setting = {}  # strategy_name: dict
         self.strategy_data = {}     # strategy_name: dict
-        self.position_data = {"volume":0,"yd_volume":0}     # strategy_name: dict
+        self.position_data = {"pnl":0}     # strategy_name: dict
 
         self.classes = {}           # class_name: stategy_class
         self.strategies = {}        # strategy_name: strategy
@@ -79,7 +79,7 @@ class CtaEngine(BaseEngine):
         """
             初始化策略引擎
         """
-        #self.init_rqdata()
+        self.init_rqdata()
         self.load_strategy_class()
         self.load_strategy_setting()
         self.load_strategy_data()
@@ -174,7 +174,6 @@ class CtaEngine(BaseEngine):
         for strategy in strategies:
             #收到tick的时候，查询当前的持有情况
             #holding=self.offset_converter.get_position_holding(tick.vt_symbol)
-            #print("-----------------------------------收到tick的时候查询持有情况")
             if strategy.inited:
                 self.call_strategy_func(strategy, strategy.on_tick, tick)
 
@@ -228,7 +227,6 @@ class CtaEngine(BaseEngine):
 
         # Update strategy pos before calling on_trade method
         # 在调用on_trade方法之前更新策略pos
-        print("处理EVENT_TRADE时候,仓位情况-------------------")
         if trade.direction == Direction.LONG:
             strategy.pos += trade.volume
         else:
@@ -247,10 +245,8 @@ class CtaEngine(BaseEngine):
         #update holding position data
         self.offset_converter.update_position(position)
         # print("1111111111111111111111111")
-        # print(position)
-        # print(self.position_data['volume'])
-        # print(position.volume)
-        if self.position_data['volume'] != position.volume or self.position_data['yd_volume'] != position.yd_volume :
+        print(position)
+        if self.position_data['pnl'] != position.pnl and (position.volume!=0 or position.yd_volume!=0):
             #save data
             database_manager.save_position_data([position])
 
@@ -381,7 +377,7 @@ class CtaEngine(BaseEngine):
         self,strategy: CtaTemplate,contract: ContractData,direction: Direction,
         offset: Offset,price: float,volume: float,lock: bool):
 
-        print("------------------------------限价单-send_limit_order")
+        #print("------------------------------限价单-send_limit_order")
         return self.send_server_order(
             strategy,
             contract,
@@ -642,7 +638,7 @@ class CtaEngine(BaseEngine):
 
             # Put event to update init completed status.
             strategy.inited = True
-
+            # ==========================================交易状态更新回调
             self.put_strategy_event(strategy)
             self.write_log(f"{strategy_name}初始化完成")
         
@@ -684,7 +680,7 @@ class CtaEngine(BaseEngine):
 
         # Sync strategy variables to data file
         self.sync_strategy_data(strategy)
-        print("停止一个cta策略+++++++++++++++++++++++++")
+        # print("停止一个cta策略+++++++++++++++++++++++++")
         # Update GUI
         self.put_strategy_event(strategy)
 
@@ -696,7 +692,7 @@ class CtaEngine(BaseEngine):
         strategy.update_setting(setting)
 
         self.update_strategy_setting(strategy_name, setting)
-        print("修改一个策略里面的参数+++++++++++++++++++++++++")
+        # print("修改一个策略里面的参数+++++++++++++++++++++++++")
         self.put_strategy_event(strategy)
 
     def remove_strategy(self, strategy_name: str):

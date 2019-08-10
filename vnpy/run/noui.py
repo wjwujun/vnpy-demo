@@ -24,9 +24,7 @@ ctp_setting = {
     "密码": "110120",
     "经纪商代码": "9999",
     "交易服务器": "tcp://180.168.146.187:10101",
-    #"交易服务器": "tcp://180.168.146.187:10130",        #非交易时段
     "行情服务器": "tcp://180.168.146.187:10111",
-    #"行情服务器": "tcp://180.168.146.187:10131",        #非交易时段
     "产品名称": "simnow_client_test",
     "授权编码": "0000000000000000",
     "产品信息": ""
@@ -96,7 +94,7 @@ def run_parent():
         trading = True
 
         # 判断当前处于的时间段
-        """
+
         if (
             (current_time >= DAY_START and current_time <= DAY_END)
             or (current_time >= NIGHT_START)
@@ -106,7 +104,7 @@ def run_parent():
 
         if (datetime.today().weekday() == 5  and current_time > NIGHT_END) or datetime.today().weekday() == 6:
             trading = False
-        """
+
 
         # 记录时间则需要启动子进程
         if trading and child_process is None:
