@@ -738,8 +738,6 @@ class CtpTdApi(TdApi):
         Send new order.
         """
         self.order_ref += 1
-        print("************--------------------------------------ctp中下订单")
-        print(req)
         ctp_req = {
             "InstrumentID": req.symbol,
             "LimitPrice": req.price,

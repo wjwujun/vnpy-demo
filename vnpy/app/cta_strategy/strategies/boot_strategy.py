@@ -25,15 +25,15 @@ class DoubleMa22Strategy(CtaTemplate):
     fixed_size = 1      # 开仓数量
     current_price=0     # 下单价格
     max_open=4          #每天最大开仓次数
-    open_count=0        #今日开仓次数
 
 
     stop_long_price=0   #多单止损价格
     stop_short_price=0  #空单止损价格
     ma_value = 0        #5min avgrage
     vt_orderids = []        # 保存委托代码的列表
+    open_count = 0  # 今日开仓次数
     # 参数列表，保存了参数的名称
-    parameters = ["current_price", "max_open", "open_count","fixed_size"]
+    parameters = ["current_price", "max_open","fixed_size"]
 
 
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
@@ -52,7 +52,7 @@ class DoubleMa22Strategy(CtaTemplate):
         Callback when strategy is inited.
         """
         self.write_log("策略初始化")
-        self.load_bar(1)       #初始化加载数据
+        self.load_bar(1)       #初始化加载5天的数据
 
     def on_start(self):
         """
@@ -75,47 +75,30 @@ class DoubleMa22Strategy(CtaTemplate):
         """
         self.bg.update_tick(tick)
         # 当前无仓位
-        if self.ma_value!=0:
-            if self.pos == 0:
-                if tick.last_price > self.ma_value :  # The current price is above the 5min moving average，Long positions
-                    self.stop_long_price = tick.last_price - 20  # long stop  price
-                    self.current_price = tick.last_price + 2
-                    print("当前开仓次数：(%s)" % (self.open_count))
-                    orderId = self.buy(tick.last_price + 2, self.fixed_size)
-                elif tick.last_price < self.ma_value:  # The current price is above the 5min moving average，Short positions
-                    self.stop_short_price = tick.last_price + 20  # short stop  price
-                    self.current_price = tick.last_price + 2
-                    orderId = self.short(tick.last_price - 2, self.fixed_size)
-                    print("当前开仓次数：(%s)" % (self.open_count))
-            elif self.pos > 0:
-                if  self.stop_long_price!=0 :  # long stop loss,current price <= Stop-Loss Price，trigger stop price
-                    if tick.last_price <= self.stop_long_price or tick.last_price>=self.ma_value:
-                        self.sell(self.stop_long_price - 2, abs(self.pos))
-            elif self.pos < 0:  # Hold short positions
-                if   self.stop_short_price!=0:  # short stop loss,current price>=Stop-Loss Price，trigger stop price
-                    if tick.last_price >= self.stop_short_price or tick.last_price>=self.ma_value:
-                        self.cover(self.stop_short_price + 2, abs(self.pos))
+
+        if self.pos == 0:
+            if tick.last_price > self.ma_value :
+                self.stop_long_price = tick.last_price - 20
+                self.current_price = tick.last_price + 2
+                print("buy 开仓价格：(%s)" % (tick.last_price + 2))
+                self.buy(tick.last_price + 2, self.fixed_size)
+            elif tick.last_price < self.ma_value:
+                self.stop_short_price = tick.last_price + 20
+                self.current_price = tick.last_price + 2
+                self.short(tick.last_price - 2, self.fixed_size)
+                print("short 开仓价格：(%s)" % (tick.last_price - 2))
+        elif self.pos > 0:
+                if self.stop_long_price!=0 and tick.last_price <= self.stop_long_price :
+                    self.sell(self.stop_long_price, abs(self.pos))
+                elif self.ma_value!=0 and tick.last_price>=self.ma_value:
+                    self.sell(tick.last_price - 2, abs(self.pos))
+        elif self.pos < 0:
+                if self.stop_short_price!=0 and tick.last_price >= self.stop_short_price :
+                    self.cover(self.stop_short_price, abs(self.pos))
+                elif self.ma_value!=0 and tick.last_price>=self.ma_value:
+                    self.cover(tick.last_price + 2, abs(self.pos))
 
 
-        #从本地查询持仓情况
-        #防止服务崩掉昨日持仓还在，看是否有昨日持仓，如果有看看是否满足平仓条件，
-
-        # if self.position:
-        #     if self.position['direction'] == "long":
-        #         self.stop_long_price = self.position['price']-20
-        #         if  tick.last_price <= self.position['price']:         #buy, the latest_price less than current_price,sell
-        #             self.sell(tick.last_price - 2, abs(self.position['volume']))
-        #         else:
-        #             self.pos = self.position['volume']
-        #             self.current_price = self.position['price']
-        #     else:
-        #         self.stop_short_price = self.position['price'] + 20
-        #         if tick.last_price >= self.position['price']:    #short,  the latest_price more than the current_price,cover
-        #             self.cover(tick.last_price + 2, abs(self.position['volume']))
-        #         else:
-        #             self.pos=-self.position['volume']
-        #             self.current_price = self.position['price']
-        #     self.clearData()
 
 
 
@@ -141,6 +124,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.am.update_bar(bar)
         if not self.am.inited:
             return
+        print("当前5min的bar的数据量：(%s)"%(self.am.count))
 
 
 

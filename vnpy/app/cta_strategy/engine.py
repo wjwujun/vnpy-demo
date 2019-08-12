@@ -245,7 +245,8 @@ class CtaEngine(BaseEngine):
         #update holding position data
         self.offset_converter.update_position(position)
         # print("1111111111111111111111111")
-        print(position)
+        if position.volume!=0 or position.yd_volume!=0:
+            print(position)
         if self.position_data['pnl'] != position.pnl and (position.volume!=0 or position.yd_volume!=0):
             #save data
             database_manager.save_position_data([position])
@@ -471,7 +472,8 @@ class CtaEngine(BaseEngine):
         if not contract:
             self.write_log(f"委托失败，找不到合约：{strategy.vt_symbol}", strategy)
             return ""
-        
+        print("11111111111111111111111111")
+        print(self.strategy_orderid_map[strategy.strategy_name])
         # Round order price and volume to nearest incremental value
         price = round_to(price, contract.pricetick)
         volume = round_to(volume, contract.min_volume)
@@ -512,9 +514,10 @@ class CtaEngine(BaseEngine):
         symbol, exchange = extract_vt_symbol(vt_symbol)
         end = datetime.now()
         start = end - timedelta(days)
-
+        print("--指标计算开始加载时间:", start,end)
         # 从RQData 加载默认数据,如果找不到，从数据库加载数据
         bars = self.query_bar_from_rq(symbol, exchange, interval, start, end)
+        print("--指标数据总量：",len(bars)/5)
         if not bars:
             bars = database_manager.load_bar_data(
                 symbol=symbol,

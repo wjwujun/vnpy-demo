@@ -291,7 +291,6 @@ class ArrayManager(object):
         """
         self.count += 1
         # print("=-==================更新am的时候inited的状态")
-        print(self.count)
         if not self.inited and self.count >= self.size:
             self.inited = True
 
