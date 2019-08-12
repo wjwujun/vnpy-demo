@@ -42,7 +42,7 @@ class DoubleMa22Strategy(CtaTemplate):
             cta_engine, strategy_name, vt_symbol, setting
         )
 
-        self.bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
+        self.bg = BarGenerator(self.on_bar,3,self.on_3min_bar)
         # 时间序列容器：计算技术指标用
         self.am = ArrayManager()
 
@@ -114,8 +114,8 @@ class DoubleMa22Strategy(CtaTemplate):
 
 
 
-    def on_5min_bar(self, bar: BarData):
-        """5分钟K线"""
+    def on_3min_bar(self, bar: BarData):
+        """3分钟K线"""
 
         # 撤销之前发出的尚未成交的委托（包括限价单和停止单）
         self.cancel_all()
