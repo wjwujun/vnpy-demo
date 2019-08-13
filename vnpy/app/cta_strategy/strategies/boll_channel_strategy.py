@@ -31,7 +31,7 @@ class BollChannelStrategy(CtaTemplate):
     cci_window = 10         # CCI窗口数
     atr_window = 30         # ATR窗口数
     sl_multiplier = 5.2     # 计算止损距离的乘数
-    fixed_size = 1          # 初始化数据所用的天数
+    fixed_size = 1          # 买入数量
 
     # 策略变量
     boll_up = 0             # 布林通道上轨

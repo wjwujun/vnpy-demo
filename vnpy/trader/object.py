@@ -104,19 +104,20 @@ class OrderData(BaseData):
     """
     Order data contains information for tracking lastest status 
     of a specific order.
+        订单数据类
     """
 
-    symbol: str
-    exchange: Exchange
-    orderid: str
+    symbol: str                 # 合约代码
+    exchange: Exchange          # 交易所代码
+    orderid: str                # 订单编号
     type: OrderType = OrderType.LIMIT
-    direction: Direction = ""
-    offset: Offset = Offset.NONE
-    price: float = 0
-    volume: float = 0
+    direction: Direction = ""        # 报单方向
+    offset: Offset = Offset.NONE         # 报单开平仓
+    price: float = 0                    # 报单价格
+    volume: float = 0                      # 报单总数量
     traded: float = 0
-    status: Status = Status.SUBMITTING
-    time: str = ""
+    status: Status = Status.SUBMITTING      # 报单状态
+    time: str = ""                      # 成交时间
 
     def __post_init__(self):
         """"""
@@ -147,18 +148,19 @@ class TradeData(BaseData):
     """
     Trade data contains information of a fill of an order. One order
     can have several trade fills.
+     成交数据类
     """
 
-    symbol: str
-    exchange: Exchange
-    orderid: str
+    symbol: str                 # 合约代码
+    exchange: Exchange          # 交易所代码
+    orderid: str                # 订单编号
     tradeid: str
     direction: Direction = ""
 
-    offset: Offset = Offset.NONE
+    offset: Offset = Offset.NONE     # 成交方向
     price: float = 0
-    volume: float = 0
-    time: str = ""
+    volume: float = 0                # 成交价格
+    time: str = ""                   # 成交时间
 
     def __post_init__(self):
         """"""

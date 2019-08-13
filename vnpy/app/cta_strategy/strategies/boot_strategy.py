@@ -74,31 +74,30 @@ class DoubleMa22Strategy(CtaTemplate):
         Callback of new tick data update.
         """
         self.bg.update_tick(tick)
-        # 当前无仓位
+
+
 
         if self.pos == 0:
-            if tick.last_price > self.ma_value :
+            if tick.last_price > tick.open_price and tick.last_price >self.ma_value:
                 self.stop_long_price = tick.last_price - 20
                 self.current_price = tick.last_price + 2
                 print("buy 开仓价格：(%s)" % (tick.last_price + 2))
                 self.buy(tick.last_price + 2, self.fixed_size)
-            elif tick.last_price < self.ma_value:
+            elif tick.last_price < tick.open_price and tick.last_price < self.ma_value:
                 self.stop_short_price = tick.last_price + 20
                 self.current_price = tick.last_price + 2
                 self.short(tick.last_price - 2, self.fixed_size)
                 print("short 开仓价格：(%s)" % (tick.last_price - 2))
         elif self.pos > 0:
-                if self.stop_long_price!=0 and tick.last_price <= self.stop_long_price :
-                    self.sell(self.stop_long_price, abs(self.pos))
-                elif self.ma_value!=0 and tick.last_price>=self.ma_value:
-                    self.sell(tick.last_price - 2, abs(self.pos))
+            if self.stop_long_price != 0 and tick.last_price <= self.stop_long_price:
+                self.sell(self.stop_long_price, abs(self.pos))
+            elif self.ma_value != 0 and tick.last_price >= self.ma_value:
+                self.sell(tick.last_price - 2, abs(self.pos))
         elif self.pos < 0:
-                if self.stop_short_price!=0 and tick.last_price >= self.stop_short_price :
-                    self.cover(self.stop_short_price, abs(self.pos))
-                elif self.ma_value!=0 and tick.last_price>=self.ma_value:
-                    self.cover(tick.last_price + 2, abs(self.pos))
-
-
+            if self.stop_short_price != 0 and tick.last_price >= self.stop_short_price:
+                self.cover(self.stop_short_price, abs(self.pos))
+            elif self.ma_value != 0 and tick.last_price >= self.ma_value:
+                self.cover(tick.last_price + 2, abs(self.pos))
 
 
 
@@ -111,7 +110,32 @@ class DoubleMa22Strategy(CtaTemplate):
         """
         self.bg.update_bar(bar)
 
-
+        # 当前无仓位
+        # if self.pos == 0:
+        #     if bar.close_price > bar.open_price and bar.close_price > self.ma_value:
+        #         self.stop_long_price = bar.close_price - 20
+        #         self.current_price = bar.close_price + 2
+        #         print("buy 开仓价格：(%s)" % (bar.close_price + 2))
+        #         self.buy(bar.close_price + 2, self.fixed_size)
+        #     elif bar.close_price < bar.open_price  and bar.close_price < self.ma_value:
+        #         self.stop_short_price = bar.close_price + 20
+        #         self.current_price = bar.close_price + 2
+        #         self.short(bar.close_price - 2, self.fixed_size)
+        #         print("short 开仓价格：(%s)" % (bar.close_price - 2))
+        # elif self.pos > 0:
+        #     print("buy------:", self.stop_long_price)
+        #     print("hc2001.SHFE------:", bar.close_price)
+        #     if self.stop_long_price != 0 and bar.close_price <= self.stop_long_price:
+        #         self.sell(self.stop_long_price, abs(self.pos))
+        #         print("buy------:", self.stop_long_price)
+        #     elif self.ma_value != 0 and bar.close_price >= self.ma_value:
+        #         self.sell(bar.close_price - 2, abs(self.pos))
+        # elif self.pos < 0:
+        #     if self.stop_short_price != 0 and bar.close_price >= self.stop_short_price:
+        #         print("short------:",self.stop_short_price)
+        #         self.cover(self.stop_short_price, abs(self.pos))
+        #     elif self.ma_value != 0 and bar.close_price >= self.ma_value:
+        #         self.cover(bar.close_price + 2, abs(self.pos))
 
 
     def on_3min_bar(self, bar: BarData):
@@ -124,7 +148,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.am.update_bar(bar)
         if not self.am.inited:
             return
-        print("当前5min的bar的数据量：(%s)"%(self.am.count))
+        print("当前3min的bar的数据量：(%s)"%(self.am.count))
 
 
 
