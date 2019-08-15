@@ -163,7 +163,8 @@ class CtaEngine(BaseEngine):
         tick = event.data
         #print("-----------------------------------保存-----收到tick的")
         #print(tick)
-        database_manager.save_tick_data([tick])
+        if tick.datetime.strftime("%H:%M:%S") <= "15:10:00":
+            database_manager.save_tick_data([tick])
         self.bg.update_tick(tick)
         self.tick=tick
         strategies = self.symbol_strategy_map[tick.vt_symbol]
@@ -245,22 +246,23 @@ class CtaEngine(BaseEngine):
         #update holding position data
         self.offset_converter.update_position(position)
         # print("1111111111111111111111111")
-        database_manager.save_position_data([position])
-        if self.position_data['pnl'] != position.pnl and (position.volume!=0 or position.yd_volume!=0):
-            #save data
-
-            self.position_data['symbol']=position.symbol
-            if position.direction==Direction.LONG:
-                self.position_data['direction']="long"
-            else:
-                self.position_data['direction']="short"
-            self.position_data['volume']=position.volume
-            self.position_data['price']=position.price
-            self.position_data['yd_volume']=position.yd_volume
-            self.position_data['pnl']=position.pnl
-            self.position_data['frozen']=position.frozen
-            #将持仓数据保存到本地。
-            save_json(self.position_filename,self.position_data)
+        strategy = self.strategies["DoubleMa22Strategy"]
+        strategy.pnl = position.pnl
+        if position.volume!=0 or position.yd_volume!=0:
+            #保存到mysql
+            database_manager.save_position_data([position])
+            # self.position_data['symbol']=position.symbol
+            # if position.direction==Direction.LONG:
+            #     self.position_data['direction']="long"
+            # else:
+            #     self.position_data['direction']="short"
+            # self.position_data['volume']=position.volume
+            # self.position_data['price']=position.price
+            # self.position_data['yd_volume']=position.yd_volume
+            # self.position_data['pnl']=position.pnl
+            # self.position_data['frozen']=position.frozen
+            # #将持仓数据保存到本地。
+            # save_json(self.position_filename,self.position_data)
 
     #账户信息查看
     def process_account_event(self,event:Event):
@@ -470,8 +472,8 @@ class CtaEngine(BaseEngine):
         if not contract:
             self.write_log(f"委托失败，找不到合约：{strategy.vt_symbol}", strategy)
             return ""
-        print("11111111111111111111111111")
-        print(self.strategy_orderid_map[strategy.strategy_name])
+        #print("11111111111111111111111111")
+        #print(self.strategy_orderid_map[strategy.strategy_name])
         # Round order price and volume to nearest incremental value
         price = round_to(price, contract.pricetick)
         volume = round_to(volume, contract.min_volume)
@@ -515,7 +517,6 @@ class CtaEngine(BaseEngine):
         print("--指标计算开始加载时间:", start,end)
         # 从RQData 加载默认数据,如果找不到，从数据库加载数据
         bars = self.query_bar_from_rq(symbol, exchange, interval, start, end)
-        print("--指标数据总量：",len(bars)/5)
         if not bars:
             bars = database_manager.load_bar_data(
                 symbol=symbol,

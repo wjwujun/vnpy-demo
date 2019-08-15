@@ -32,6 +32,7 @@ class CtaTemplate(ABC):
         self.inited = False
         self.trading = False
         self.pos = 0
+        self.pnl = 0
 
         # Copy a new variables list here to avoid duplicate insert when multiple 
         # strategy instances are created with the same strategy class.
