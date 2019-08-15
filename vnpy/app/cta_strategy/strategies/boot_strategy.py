@@ -54,7 +54,7 @@ class DoubleMa22Strategy(CtaTemplate):
         Callback when strategy is inited.
         """
         self.write_log("策略初始化")
-        self.load_bar(2)       #初始化加载5天的数据
+        self.load_bar(5)       #初始化加载2天的数据
 
     def on_start(self):
         """
@@ -103,7 +103,7 @@ class DoubleMa22Strategy(CtaTemplate):
             if self.ma_value != 0 and tick.last_price >= self.ma_value:
                 self.sell(tick.last_price - 2, abs(self.pos))
                 return
-        else:
+        elif self.pos < 0:
             if self.stop_short_price != 0 and tick.last_price >= self.stop_short_price:
                 self.cover(self.stop_short_price, abs(self.pos))
                 return

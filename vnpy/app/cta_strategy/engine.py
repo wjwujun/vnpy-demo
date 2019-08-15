@@ -245,11 +245,9 @@ class CtaEngine(BaseEngine):
         #update holding position data
         self.offset_converter.update_position(position)
         # print("1111111111111111111111111")
-        if position.volume!=0 or position.yd_volume!=0:
-            print(position)
+        database_manager.save_position_data([position])
         if self.position_data['pnl'] != position.pnl and (position.volume!=0 or position.yd_volume!=0):
             #save data
-            database_manager.save_position_data([position])
 
             self.position_data['symbol']=position.symbol
             if position.direction==Direction.LONG:
