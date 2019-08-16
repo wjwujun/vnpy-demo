@@ -161,9 +161,7 @@ class CtaEngine(BaseEngine):
     #接收到tick数据后的处理方法,
     def process_tick_event(self, event: Event):
         tick = event.data
-        #print("-----------------------------------保存-----收到tick的")
-        #print(tick)
-        if tick.datetime.strftime("%H:%M:%S") <= "15:10:00":
+        if tick.datetime.strftime("%H:%M:%S") <= "15:10:00" and tick.datetime.strftime("%H:%M:%S") >= "08:59:50":
             database_manager.save_tick_data([tick])
         self.bg.update_tick(tick)
         self.tick=tick
@@ -248,21 +246,11 @@ class CtaEngine(BaseEngine):
         # print("1111111111111111111111111")
         strategy = self.strategies["DoubleMa22Strategy"]
         strategy.pnl = position.pnl
-        if position.volume!=0 or position.yd_volume!=0:
+        strategy.current_price = position.price
+        strategy.direction = position.direction
+        if position.pnl!=0:
             #保存到mysql
             database_manager.save_position_data([position])
-            # self.position_data['symbol']=position.symbol
-            # if position.direction==Direction.LONG:
-            #     self.position_data['direction']="long"
-            # else:
-            #     self.position_data['direction']="short"
-            # self.position_data['volume']=position.volume
-            # self.position_data['price']=position.price
-            # self.position_data['yd_volume']=position.yd_volume
-            # self.position_data['pnl']=position.pnl
-            # self.position_data['frozen']=position.frozen
-            # #将持仓数据保存到本地。
-            # save_json(self.position_filename,self.position_data)
 
     #账户信息查看
     def process_account_event(self,event:Event):
