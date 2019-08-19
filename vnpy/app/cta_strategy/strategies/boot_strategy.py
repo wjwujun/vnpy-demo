@@ -1,6 +1,4 @@
-import time
-
-import datetime
+from datetime import time
 
 from vnpy.app.cta_strategy import (
     CtaTemplate,
@@ -25,17 +23,24 @@ class DoubleMa22Strategy(CtaTemplate):
 
     # 策略变量
     fixed_size = 1      # 开仓数量
-    max_open=5          #每天最大开仓次数
+    #max_open=5          #每天最大开仓次数
 
     stop_price=0        #止损价格
-    profit_price=0      #止盈价格
+    #profit_price=0      #止盈价格
     ma_value = 0        #5min avgrage
-    open_count = 1      # 今日开仓次数
+    #open_count = 1      # 今日开仓次数
     open_price=0        #今日开盘价
     active=True         #开仓开关
-    close_position=False #平仓开关
-    close_profit=0      #盈利
+    # close_position=False #平仓开关
+    # close_profit=0      #盈利
+    exit_time = time(hour=14, minute=55)
+    # close_price=[10,20,30,40,50,60,70,80]  #止盈等级，根据等级来确定止盈的价格
+    # arr = []  # 确定止盈的范围
     # 参数列表，保存了参数的名称
+
+    long_entry = 0
+    short_entry = 0
+
     parameters = ["max_open","fixed_size"]
 
 
@@ -77,71 +82,61 @@ class DoubleMa22Strategy(CtaTemplate):
         Callback of new tick data update.
         """
         self.bg.update_tick(tick)
-        #self.open_price=tick.open_price
-        print("查看当前盈亏：(%s),当前价：(%s),下单价：(%s),方向：(%s),止损价：(%s),止盈价格：(%s)"%(
-            self.pnl,tick.last_price,self.current_price,self.direction,self.stop_price,self.profit_price))
+        self.open_price=tick.open_price
+        print("查看当前盈亏：(%s),当前价：(%s),开盘价：(%s),下单价：(%s),方向：(%s),止损价：(%s)"%(
+            self.pnl,tick.last_price,self.open_price,self.current_price,self.direction,self.stop_price))
+        #每日最大开仓次数
+        # if self.open_count == self.max_open:
+        #     self.active = False
+
+        # 确定止平仓的价格范围
+        if self.current_price != 0:
+            if self.direction == Direction.LONG:
+                if(tick.last_price - self.current_price) > 5:
+                    self.stop_price = tick.last_price - 5
+                else:
+                    self.stop_price = self.current_price - 5
+            else:
+                if  (self.current_price - tick.last_price) > 5:
+                    self.stop_price = tick.last_price + 5
+                else:
+                    self.stop_price = self.current_price + 5
+                # for str_int in self.close_price:
+                #     str = '{}{}'.format('cover_', str_int)
+                #     if str_int / 10 > 0 and str not in self.arr:
+                #         self.profit_price = tick.last_price + 5
+                #         self.arr.append(str)
 
 
-        if self.open_count == self.max_open:
-            self.active = False
 
+        if tick.datetime.time() < self.exit_time:
 
-        if tick.datetime.strftime("%H:%M:%S") >="14:55:00":
-            if self.pos > 0:
-                self.sell(tick.last_price - 1, abs(self.pos))
+            # 当前无仓位
+            if self.pos == 0 and self.active:
+                if tick.last_price > self.open_price and self.long_entry <= 1 and tick.last_price > self.ma_value :
+                    print("buy 下单价：(%s),当前均值：(%s),当前最新价：(%s)" % (tick.last_price + 1, self.ma_value, tick.last_price))
+                    self.buy(tick.last_price + 1, self.fixed_size)
+                    self.long_entry += 1
+                elif tick.last_price < self.open_price and self.short_entry <= 1 and tick.last_price < self.ma_value :
+                    print("short 下单价：(%s),当前均值：(%s),当前最新价：(%s)" % (tick.last_price - 1, self.ma_value, tick.last_price))
+                    self.short(tick.last_price - 1, self.fixed_size)
+                    self.short_entry +=1
+            elif self.pos > 0 :
+                # 多头止损单
+                self.sell(self.stop_price, abs(self.pos), stop=True)
+                # if tick.last_price - 2 == self.profit_price:  # 止盈
+                #     self.sell(self.profit_price, abs(self.pos))
             elif self.pos < 0:
-                self.cover(tick.last_price + 1, abs(self.pos))
-            return
-
-        #停止
-        if self.current_price!=0:
-            if self.direction==Direction.LONG:
-                self.stop_price = self.current_price - 10
-                self.close_profit = tick.last_price-self.current_price
-                if self.close_profit/10>0 and self.profit_price !=0:
-                    self.profit_price=tick.last_price - 5
-                if self.close_profit/20>0 and self.profit_price >0:
-                    self.profit_price=tick.last_price - 5
-
-            if self.direction==Direction.SHORT:
-                self.stop_price = self.current_price + 10
-                self.close_profit = self.current_price-tick.last_price
-                if self.close_profit/10 > 0 and self.profit_price != 0:
-                    self.profit_price = tick.last_price + 5
-                if self.close_profit/20>0 and self.profit_price > 0:
-                    self.profit_price=tick.last_price + 5
-
-        # 当前无仓位
-        if self.pos == 0 and self.active:
-            self.close_position = True
-            if tick.last_price > self.open_price and tick.last_price > self.ma_value:
-                print("buy 下单价：(%s),当前均值：(%s),当前最新价：(%s)" % (tick.last_price + 1, self.ma_value,tick.last_price))
-                num = self.buy(tick.last_price + 1, self.fixed_size)
-                if num:
-                    self.open_count += 1
-                return
-            elif tick.last_price < self.open_price and tick.last_price < self.ma_value:
-                print("short 下单价：(%s),当前均值：(%s),当前最新价：(%s)" % (tick.last_price - 1, self.ma_value,tick.last_price))
-                num = self.short(tick.last_price - 1, self.fixed_size)
-                if num:
-                    self.open_count += 1
-                return
-
-
-        if self.pos > 0 and self.close_position:
-            if tick.last_price - 2 <= self.stop_price:            #止损
-                self.sell(tick.stop_price, abs(self.pos))
-                self.close_position = False
-            if tick.last_price == self.profit_price:             #止盈
-                self.sell(tick.profit_price - 1, abs(self.pos))
-                self.close_position = False
-        elif self.pos < 0 and self.close_position:
-            if  tick.last_price + 2 >= self.stop_price:          #止损
-                self.cover(tick.stop_price, abs(self.pos))
-                self.close_position = False
-            if tick.last_price == self.profit_price:             #止盈
-                self.cover(tick.profit_price + 1, abs(self.pos))
-                self.close_position = False
+                # 空头止损单
+                self.cover(self.stop_price, abs(self.pos), stop=True)
+                # if tick.last_price + 2 == self.profit_price:  # 止盈
+                #     self.cover(self.profit_price, abs(self.pos))
+        # 收盘平仓
+        else:
+            if self.pos > 0:
+                self.sell(tick.last_price + 1, abs(self.pos))
+            elif self.pos < 0:
+                self.cover(tick.last_price - 1, abs(self.pos))
 
     def on_bar(self, bar: BarData):
         """
