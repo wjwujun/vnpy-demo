@@ -25,17 +25,19 @@ class DoubleMa22Strategy(CtaTemplate):
     fixed_size = 1      # 开仓数量
     #max_open=5          #每天最大开仓次数
 
-    stop_price=0        #止损价格
+    #stop_price=0        #止损价格
+    stop_long=0          #多头止损
+    stop_short=0         #空头止损
     #profit_price=0      #止盈价格
-    ma_value = 0        #5min avgrage
+    ma_value = 0         #5min avgrage
     #open_count = 1      # 今日开仓次数
     open_price=0        #今日开盘价
-    active=True         #开仓开关
+    #active=True         #开仓开关
     # close_position=False #平仓开关
     # close_profit=0      #盈利
     exit_time = time(hour=14, minute=55)
-    # close_price=[10,20,30,40,50,60,70,80]  #止盈等级，根据等级来确定止盈的价格
-    # arr = []  # 确定止盈的范围
+    close_price=[5,10,20,30,40,50,60,70,80,90]  #止盈等级，根据等级来确定止盈的价格
+    arr = []  # 确定止盈的范围
     # 参数列表，保存了参数的名称
 
     long_entry = 0
@@ -83,36 +85,32 @@ class DoubleMa22Strategy(CtaTemplate):
         """
         self.bg.update_tick(tick)
         self.open_price=tick.open_price
-        print("查看当前盈亏：(%s),当前价：(%s),开盘价：(%s),下单价：(%s),方向：(%s),止损价：(%s)"%(
-            self.pnl,tick.last_price,self.open_price,self.current_price,self.direction,self.stop_price))
+        print("查看当前盈亏：(%s),当前价：(%s),开盘价：(%s),下单价：(%s),方向：(%s),多止损价：(%s),空止损价：(%s)"%(
+            self.pnl,tick.last_price,self.open_price,self.current_price,self.direction,self.stop_long,self.stop_short))
         #每日最大开仓次数
         # if self.open_count == self.max_open:
         #     self.active = False
-
         # 确定止平仓的价格范围
         if self.current_price != 0:
-            if self.direction == Direction.LONG:
-                if(tick.last_price - self.current_price) > 5:
-                    self.stop_price = tick.last_price - 5
-                else:
-                    self.stop_price = self.current_price - 5
-            else:
-                if  (self.current_price - tick.last_price) > 5:
-                    self.stop_price = tick.last_price + 5
-                else:
-                    self.stop_price = self.current_price + 5
-                # for str_int in self.close_price:
-                #     str = '{}{}'.format('cover_', str_int)
-                #     if str_int / 10 > 0 and str not in self.arr:
-                #         self.profit_price = tick.last_price + 5
-                #         self.arr.append(str)
+            self.stop_long = max(self.current_price - 5, self.stop_long)
+            self.stop_short = min(self.current_price + 5, self.stop_short)
+            stop_price = abs(self.current_price - tick.last_price)
+            for i in self.close_price:
+                if stop_price > i and i not in self.arr:
+                    if self.direction == Direction.LONG:
+                        self.stop_long = tick.last_price - 5
+                    else:
+                        self.stop_short = tick.last_price + 5
+                    self.arr.append(i)
+
 
 
 
         if tick.datetime.time() < self.exit_time:
 
             # 当前无仓位
-            if self.pos == 0 and self.active:
+            if self.pos == 0 :
+                self.arr=[]         #无仓位清空数据
                 if tick.last_price > self.open_price and self.long_entry <= 1 and tick.last_price > self.ma_value :
                     print("buy 下单价：(%s),当前均值：(%s),当前最新价：(%s)" % (tick.last_price + 1, self.ma_value, tick.last_price))
                     self.buy(tick.last_price + 1, self.fixed_size)
@@ -123,12 +121,12 @@ class DoubleMa22Strategy(CtaTemplate):
                     self.short_entry +=1
             elif self.pos > 0 :
                 # 多头止损单
-                self.sell(self.stop_price, abs(self.pos), stop=True)
+                self.sell(self.stop_long, abs(self.pos), stop=True)
                 # if tick.last_price - 2 == self.profit_price:  # 止盈
                 #     self.sell(self.profit_price, abs(self.pos))
             elif self.pos < 0:
                 # 空头止损单
-                self.cover(self.stop_price, abs(self.pos), stop=True)
+                self.cover(self.stop_short, abs(self.pos), stop=True)
                 # if tick.last_price + 2 == self.profit_price:  # 止盈
                 #     self.cover(self.profit_price, abs(self.pos))
         # 收盘平仓
