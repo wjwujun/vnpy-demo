@@ -34,7 +34,7 @@ class DoubleMa22Strategy(CtaTemplate):
     open_price=0        #今日开盘价
     active=True         #开仓开关
     close_position=False #平仓开关
-    close_profit=0      #盈利平仓条件
+    close_profit=0      #盈利
     # 参数列表，保存了参数的名称
     parameters = ["max_open","fixed_size"]
 
@@ -96,17 +96,20 @@ class DoubleMa22Strategy(CtaTemplate):
         #停止
         if self.current_price!=0:
             if self.direction==Direction.LONG:
-                self.stop_price = tick.current_price - 10
+                self.stop_price = self.current_price - 10
                 self.close_profit = tick.last_price-self.current_price
-                if self.close_profit/10>0:
-                    self.profit_price=tick.last_price-5
+                if self.close_profit/10>0 and self.profit_price !=0:
+                    self.profit_price=tick.last_price - 5
+                if self.close_profit/20>0 and self.profit_price >0:
+                    self.profit_price=tick.last_price - 5
 
             if self.direction==Direction.SHORT:
-                self.stop_price = tick.current_price + 10
+                self.stop_price = self.current_price + 10
                 self.close_profit = self.current_price-tick.last_price
-                if self.close_profit/10 > 0:
+                if self.close_profit/10 > 0 and self.profit_price != 0:
                     self.profit_price = tick.last_price + 5
-
+                if self.close_profit/20>0 and self.profit_price > 0:
+                    self.profit_price=tick.last_price + 5
 
         # 当前无仓位
         if self.pos == 0 and self.active:
