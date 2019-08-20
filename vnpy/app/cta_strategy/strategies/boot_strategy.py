@@ -37,7 +37,8 @@ class DoubleMa22Strategy(CtaTemplate):
     # close_profit=0      #盈利
     exit_time = time(hour=14, minute=55)
     close_price=[5,10,20,30,40,50,60,70,80,90]  #止盈等级，根据等级来确定止盈的价格
-    arr = []  # 确定止盈的范围
+    arr_long = []  # 确定止盈的范围
+    arr_short = []  # 确定止盈的范围
     # 参数列表，保存了参数的名称
 
     long_entry = 0
@@ -96,12 +97,14 @@ class DoubleMa22Strategy(CtaTemplate):
             self.stop_short = min(self.current_price + 5, self.stop_short)
             stop_price = abs(self.current_price - tick.last_price)
             for i in self.close_price:
-                if stop_price > i and i not in self.arr:
                     if self.direction == Direction.LONG:
-                        self.stop_long = tick.last_price - 5
+                        if stop_price > i and (i not in self.arr_long):
+                            self.stop_long = tick.last_price - 5
+                            self.arr_long.append(i)
                     else:
-                        self.stop_short = tick.last_price + 5
-                    self.arr.append(i)
+                        if stop_price > i and (i not in self.arr_short):
+                            self.stop_short = tick.last_price + 5
+                            self.arr_short.append(i)
 
 
 
@@ -110,7 +113,8 @@ class DoubleMa22Strategy(CtaTemplate):
 
             # 当前无仓位
             if self.pos == 0 :
-                self.arr=[]         #无仓位清空数据
+                self.arr_long=[]         #无仓位清空数据
+                self.arr_short=[]         #无仓位清空数据
                 if tick.last_price > self.open_price and self.long_entry <= 1 and tick.last_price > self.ma_value :
                     print("buy 下单价：(%s),当前均值：(%s),当前最新价：(%s)" % (tick.last_price + 1, self.ma_value, tick.last_price))
                     self.buy(tick.last_price + 1, self.fixed_size)
