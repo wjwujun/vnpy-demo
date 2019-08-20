@@ -44,6 +44,9 @@ class DoubleMa22Strategy(CtaTemplate):
     long_entry = 0
     short_entry = 0
 
+    long_entered = False
+    short_entered = False
+
     parameters = ["max_open","fixed_size"]
 
 
@@ -85,7 +88,7 @@ class DoubleMa22Strategy(CtaTemplate):
         Callback of new tick data update.
         """
         self.bg.update_tick(tick)
-        self.open_price=tick.open_price
+        #self.open_price=tick.open_price
         print("查看当前盈亏：(%s),当前价：(%s),开盘价：(%s),下单价：(%s),方向：(%s),多止损价：(%s),空止损价：(%s)"%(
             self.pnl,tick.last_price,self.open_price,self.current_price,self.direction,self.stop_long,self.stop_short))
         #每日最大开仓次数
@@ -106,23 +109,37 @@ class DoubleMa22Strategy(CtaTemplate):
                             self.stop_short = tick.last_price + 5
                             self.arr_short.append(i)
 
+        aa = abs(tick.last_price - tick.open_price)
+        bb = abs(tick.last_price - tick.pre_close)
 
+        if tick.last_price >tick.open_price and tick.last_price >tick.pre_close :
+            if aa<=10 and bb<=10 and self.long_entry <= 1 :
+                self.long_entered=True
+            if aa > 10 and bb >10 and self.short_entry <= 1 :
+                self.short_entered=True
+
+        if tick.last_price < tick.open_price and tick.last_price < tick.pre_close:
+            if aa<=10 and bb<=10 and self.short_entry <= 1 :
+                self.short_entered=True
+            if aa > 10 and bb >10 and self.long_entered <= 1 :
+                self.long_entered=True
 
 
         if tick.datetime.time() < self.exit_time:
-
             # 当前无仓位
             if self.pos == 0 :
                 self.arr_long=[]         #无仓位清空数据
                 self.arr_short=[]         #无仓位清空数据
-                if tick.last_price > self.open_price and self.long_entry <= 1 and tick.last_price > self.ma_value :
+                if self.long_entered:
                     print("buy 下单价：(%s),当前均值：(%s),当前最新价：(%s)" % (tick.last_price + 1, self.ma_value, tick.last_price))
                     self.buy(tick.last_price + 1, self.fixed_size)
                     self.long_entry += 1
-                elif tick.last_price < self.open_price and self.short_entry <= 1 and tick.last_price < self.ma_value :
+                    self.long_entered = False
+                elif self.short_entered :
                     print("short 下单价：(%s),当前均值：(%s),当前最新价：(%s)" % (tick.last_price - 1, self.ma_value, tick.last_price))
                     self.short(tick.last_price - 1, self.fixed_size)
                     self.short_entry +=1
+                    self.short_entry=False
             elif self.pos > 0 :
                 # 多头止损单
                 self.sell(self.stop_long, abs(self.pos), stop=True)
