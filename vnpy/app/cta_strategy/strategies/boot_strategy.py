@@ -23,33 +23,25 @@ class DoubleMa22Strategy(CtaTemplate):
 
     # 策略变量
     fixed_size = 1      # 开仓数量
-    #max_open=5          #每天最大开仓次数
-
-    #stop_price=0        #止损价格
-    stop_long=0          #多头止损
-    stop_short=0         #空头止损
-    #profit_price=0      #止盈价格
     ma_value = 0         #5min avgrage
-    #open_count = 1      # 今日开仓次数
-    open_price=0        #今日开盘价
-    #active=True         #开仓开关
-    # close_position=False #平仓开关
-    # close_profit=0      #盈利
     exit_time = time(hour=14, minute=55)
+    start_time = time(hour=8, minute=59)
     close_price=[5,10,20,30,40,50,60,70,80,90]  #止盈等级，根据等级来确定止盈的价格
     arr_long = []  # 确定止盈的范围
     arr_short = []  # 确定止盈的范围
-    # 参数列表，保存了参数的名称
-
-    long_entry = 0
-    short_entry = 0
-
+    stop_long = 0  # 多头止损
+    stop_short = 0  # 空头止损
+    long_time = 0
+    short_time = 0
     long_entered = False
     short_entered = False
+    last_price= 0
+    parameters = ["fixed_size"]
 
-    parameters = ["max_open","fixed_size"]
 
-
+    open_spread=0       #开仓价之差
+    close_spread=0      #昨收盘之差
+    action_status=False #点差
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
         """"""
         super(DoubleMa22Strategy, self).__init__(
@@ -59,7 +51,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
         # 时间序列容器：计算技术指标用
         self.am = ArrayManager()
-
+        print("************************************************")
 
     def on_init(self):
         """
@@ -88,68 +80,60 @@ class DoubleMa22Strategy(CtaTemplate):
         Callback of new tick data update.
         """
         self.bg.update_tick(tick)
-        #self.open_price=tick.open_price
-        print("查看当前盈亏：(%s),当前价：(%s),开盘价：(%s),下单价：(%s),方向：(%s),多止损价：(%s),空止损价：(%s)"%(
-            self.pnl,tick.last_price,self.open_price,self.current_price,self.direction,self.stop_long,self.stop_short))
-        #每日最大开仓次数
-        # if self.open_count == self.max_open:
-        #     self.active = False
+        if self.last_price == 0:
+            self.last_price=tick.last_price
+            self.open_spread = abs(self.last_price - tick.open_price)
+            self.close_spread = abs(self.last_price - tick.pre_close)
+            if self.last_price > tick.open_price and self.last_price > tick.pre_close:
+                self.long_entered = True
+            if self.last_price < tick.open_price and self.last_price < tick.pre_close:
+                self.short_entered = True
+            if self.open_spread > 10 and self.close_spread > 10:
+                self.action_status=True
+
+        print("查看当前盈亏：(%s),当前价：(%s),开盘价：(%s),下单价：(%s),方向：(%s),"
+              "多止损价：(%s),空止损价：(%s),多单次数(%s),空单次数(%s),当前仓位(%s)"%(
+            self.pnl,tick.last_price,tick.open_price,self.current_price,self.direction,
+            self.stop_long,self.stop_short,self.long_time,self.short_time,self.pos))
         # 确定止平仓的价格范围
         if self.current_price != 0:
-            self.stop_long = max(self.current_price - 5, self.stop_long)
-            self.stop_short = min(self.current_price + 5, self.stop_short)
             stop_price = abs(self.current_price - tick.last_price)
             for i in self.close_price:
-                    if self.direction == Direction.LONG:
-                        if stop_price > i and (i not in self.arr_long):
-                            self.stop_long = tick.last_price - 5
-                            self.arr_long.append(i)
-                    else:
-                        if stop_price > i and (i not in self.arr_short):
-                            self.stop_short = tick.last_price + 5
-                            self.arr_short.append(i)
+                if self.direction == Direction.LONG:
+                    if stop_price > i and (i not in self.arr_long):
+                        self.stop_long = tick.last_price - 5
+                        self.arr_long.append(i)
+                else:
+                    if stop_price > i and (i not in self.arr_short):
+                        self.stop_short = tick.last_price + 5
+                        self.arr_short.append(i)
+            self.stop_long = max(self.current_price - 5, self.stop_long)
+            self.stop_short = min(self.current_price + 5, self.stop_short)
 
-        aa = abs(tick.last_price - tick.open_price)
-        bb = abs(tick.last_price - tick.pre_close)
-
-        if tick.last_price >tick.open_price and tick.last_price >tick.pre_close :
-            if aa<=10 and bb<=10 and self.long_entry <= 1 :
-                self.long_entered=True
-            if aa > 10 and bb >10 and self.short_entry <= 1 :
-                self.short_entered=True
-
-        if tick.last_price < tick.open_price and tick.last_price < tick.pre_close:
-            if aa<=10 and bb<=10 and self.short_entry <= 1 :
-                self.short_entered=True
-            if aa > 10 and bb >10 and self.long_entered <= 1 :
-                self.long_entered=True
-
-
-        if tick.datetime.time() < self.exit_time:
+        if self.start_time< tick.datetime.time() < self.exit_time:
             # 当前无仓位
-            if self.pos == 0 :
+            if self.pos == 0 and self.pos < self.fixed_size:
                 self.arr_long=[]         #无仓位清空数据
                 self.arr_short=[]         #无仓位清空数据
-                if self.long_entered:
-                    print("buy 下单价：(%s),当前均值：(%s),当前最新价：(%s)" % (tick.last_price + 1, self.ma_value, tick.last_price))
-                    self.buy(tick.last_price + 1, self.fixed_size)
-                    self.long_entry += 1
+                aa=tick.last_price - self.last_price
+                if self.long_entered and self.long_time <= 1 and aa < -5 :
+                    self.long_time += 1
                     self.long_entered = False
-                elif self.short_entered :
-                    print("short 下单价：(%s),当前均值：(%s),当前最新价：(%s)" % (tick.last_price - 1, self.ma_value, tick.last_price))
+                    self.buy(tick.last_price + 1, self.fixed_size)
+                    print("buy 下单价：(%s),当前均值：(%s),当前最新价：(%s)" % (tick.last_price + 1, self.ma_value, tick.last_price))
+                if self.short_entered and self.short_time <= 1 and aa > 5  :
+                    self.short_time += 1
+                    self.long_entered=False
                     self.short(tick.last_price - 1, self.fixed_size)
-                    self.short_entry +=1
-                    self.short_entry=False
+                    print("short 下单价：(%s),当前均值：(%s),当前最新价：(%s)" % (tick.last_price - 1, self.ma_value, tick.last_price))
             elif self.pos > 0 :
                 # 多头止损单
-                self.sell(self.stop_long, abs(self.pos), stop=True)
-                # if tick.last_price - 2 == self.profit_price:  # 止盈
-                #     self.sell(self.profit_price, abs(self.pos))
+                self.cancel_all()
+                self.sell(self.stop_long, abs(self.pos),True)
             elif self.pos < 0:
                 # 空头止损单
-                self.cover(self.stop_short, abs(self.pos), stop=True)
-                # if tick.last_price + 2 == self.profit_price:  # 止盈
-                #     self.cover(self.profit_price, abs(self.pos))
+                self.cancel_all()
+                self.cover(self.stop_short, abs(self.pos),True)
         # 收盘平仓
         else:
             if self.pos > 0:
@@ -162,44 +146,7 @@ class DoubleMa22Strategy(CtaTemplate):
         Callback of new bar data update.
         """
         self.bg.update_bar(bar)
-        # 撤销之前发出的尚未成交的委托（包括限价单和停止单）
         self.cancel_all()
-
-        # if self.open_count == self.max_open:
-        #     self.active=False
-        #
-        # # 当前无仓位
-        # if self.pos == 0 and self.active:
-        #     if bar.close_price > self.open_price and bar.close_price > self.ma_value:
-        #         self.stop_long_price = bar.close_price - 20
-        #         self.current_price = bar.close_price + 2
-        #         print("buy 价格：(%s),当前均值：(%s)" % (bar.close_price + 2,self.ma_value))
-        #         num=self.buy(bar.close_price + 2, self.fixed_size)
-        #         if num:
-        #             self.open_count += 1
-        #
-        #     elif bar.close_price < self.open_price  and bar.close_price < self.ma_value:
-        #         self.stop_short_price = bar.close_price + 20
-        #         self.current_price = bar.close_price + 2
-        #         print("short 价格：(%s),当前均值：(%s)" % (bar.close_price - 2,self.ma_value))
-        #         num=self.short(bar.close_price - 2, self.fixed_size)
-        #         if num:
-        #             self.open_count+=1
-
-        # elif self.pos > 0:
-        #     print("buy------:", self.stop_long_price)
-        #     print("hc2001.SHFE------:", bar.close_price)
-        #     if self.stop_long_price != 0 and bar.close_price <= self.stop_long_price:
-        #         self.sell(self.stop_long_price, abs(self.pos))
-        #         print("buy------:", self.stop_long_price)
-        #     elif self.ma_value != 0 and bar.close_price >= self.ma_value:
-        #         self.sell(bar.close_price - 2, abs(self.pos))
-        # elif self.pos < 0:
-        #     if self.stop_short_price != 0 and bar.close_price >= self.stop_short_price:
-        #         print("short------:",self.stop_short_price)
-        #         self.cover(self.stop_short_price, abs(self.pos))
-        #     elif self.ma_value != 0 and bar.close_price >= self.ma_value:
-        #         self.cover(bar.close_price + 2, abs(self.pos))
 
 
     def on_5min_bar(self, bar: BarData):
@@ -209,32 +156,11 @@ class DoubleMa22Strategy(CtaTemplate):
         self.am.update_bar(bar)
         if not self.am.inited:
             return
-        print("当前5min的bar的数据量：(%s)"%(self.am.count))
+        #print("当前5min的bar的数据量：(%s)"%(self.am.count))
 
         # Calculator the 5min moving average
         self.ma_value = self.am.sma(5)
 
-        #if abs(self.pos)< abs(self.fixed_size):
-            # # 当前无仓位
-            # if self.pos == 0:
-            #     if bar.close_price > self.ma_value:  # The current price is above the 5min moving average，Long positions
-            #         self.stop_long_price = bar.close_price - 20  # long stop  price
-            #         self.current_price = bar.close_price + 2
-            #         print("当前开仓次数：(%s)" %(self.open_count))
-            #         orderId=self.buy(bar.close_price + 2, self.fixed_size)
-            #         if orderId:
-            #             self.open_count  += 1
-            #
-            #     elif bar.close_price < self.ma_value:  # The current price is above the 5min moving average，Short positions
-            #         self.stop_short_price = bar.close_price + 20  # short stop  price
-            #         self.current_price = bar.close_price + 2
-            #         orderId=self.short(bar.close_price - 2, self.fixed_size)
-            #         print("当前开仓次数：(%s)" % (self.open_count))
-            #         if orderId:
-            #             self.open_count  += 1
-
-        # 发出状态更新事件
-        #self.put_event()
 
 
 
