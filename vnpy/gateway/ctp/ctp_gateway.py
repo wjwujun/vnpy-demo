@@ -791,7 +791,8 @@ class CtpTdApi(TdApi):
             "SessionID": int(sessionid),
             "ActionFlag": THOST_FTDC_AF_Delete,
             "BrokerID": self.brokerid,
-            "InvestorID": self.userid
+            "InvestorID": self.userid,
+            "ExchangeID": req.exchange.value
         }
         
         self.reqid += 1
