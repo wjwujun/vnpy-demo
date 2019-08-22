@@ -31,6 +31,8 @@ class DoubleMa22Strategy(CtaTemplate):
     arr_short = []  # 确定止盈的范围
     stop_long = 0  # 多头止损
     stop_short = 0  # 空头止损
+
+    open_count=2
     long_time = 0
     short_time = 0
     long_entered = False
@@ -40,7 +42,6 @@ class DoubleMa22Strategy(CtaTemplate):
 
 
     open_spread=0       #开仓价之差
-    close_spread=0      #昨收盘之差
     action_status=False #点差
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
         """"""
@@ -51,7 +52,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
         # 时间序列容器：计算技术指标用
         self.am = ArrayManager()
-        print("************************************************")
+        print("************************************************22222222222")
 
     def on_init(self):
         """
@@ -83,13 +84,20 @@ class DoubleMa22Strategy(CtaTemplate):
         if self.last_price == 0:
             self.last_price=tick.last_price
             self.open_spread = abs(self.last_price - tick.open_price)
-            self.close_spread = abs(self.last_price - tick.pre_close)
-            if self.last_price > tick.open_price and self.last_price > tick.pre_close:
-                self.long_entered = True
-            if self.last_price < tick.open_price and self.last_price < tick.pre_close:
-                self.short_entered = True
-            if self.open_spread > 10 and self.close_spread > 10:
+            if abs(self.open_spread) <= 10:
                 self.action_status=True
+                if self.last_price > tick.open_price :
+                    self.long_entered = True
+                elif self.last_price < tick.open_price :
+                    self.short_entered = True
+            else:
+                if self.last_price > tick.open_price :
+                    self.short_entered = True
+                elif self.last_price < tick.open_price :
+                    self.long_entered = True
+
+
+
 
         print("查看当前盈亏：(%s),当前价：(%s),开盘价：(%s),下单价：(%s),方向：(%s),"
               "多止损价：(%s),空止损价：(%s),多单次数(%s),空单次数(%s),当前仓位(%s)"%(
@@ -115,17 +123,23 @@ class DoubleMa22Strategy(CtaTemplate):
             if self.pos == 0 and self.pos < self.fixed_size:
                 self.arr_long=[]         #无仓位清空数据
                 self.arr_short=[]         #无仓位清空数据
-                aa=tick.last_price - self.last_price
-                if self.long_entered and self.long_time <= 1 and aa < -5 :
-                    self.long_time += 1
-                    self.long_entered = False
-                    self.buy(tick.last_price + 1, self.fixed_size)
-                    print("buy 下单价：(%s),当前均值：(%s),当前最新价：(%s)" % (tick.last_price + 1, self.ma_value, tick.last_price))
-                if self.short_entered and self.short_time <= 1 and aa > 5  :
-                    self.short_time += 1
-                    self.long_entered=False
-                    self.short(tick.last_price - 1, self.fixed_size)
-                    print("short 下单价：(%s),当前均值：(%s),当前最新价：(%s)" % (tick.last_price - 1, self.ma_value, tick.last_price))
+                aa=self.last_price - tick.last_price
+                if  self.action_status:
+                    if self.long_entered and self.long_time <= self.open_count and aa == 5 :
+                        self.long_time += 1
+                        self.buy(tick.last_price + 1, self.fixed_size)
+                    elif self.short_entered and self.short_time <= self.open_count and aa == -5  :
+                        self.short_time += 1
+                        self.short(tick.last_price - 1, self.fixed_size)
+                else:
+                    if self.long_entered and self.long_time <= self.open_count and aa == 5:
+                        self.long_time += 1
+                        self.buy(tick.last_price + 1, self.fixed_size)
+                    elif self.short_entered and self.short_time <= self.open_count and aa == -5:
+                        self.short_time += 1
+                        self.short(tick.last_price - 1, self.fixed_size)
+
+
             elif self.pos > 0 :
                 # 多头止损单
                 self.cancel_all()
