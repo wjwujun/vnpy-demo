@@ -1,4 +1,5 @@
 from datetime import time
+from time import sleep
 
 from vnpy.app.cta_strategy import (
     CtaTemplate,
@@ -14,7 +15,6 @@ from vnpy.trader.constant import Direction
 from vnpy.trader.utility import load_json, save_json
 
 """
-    tick 止损
 """
 
 class DoubleMa22Strategy(CtaTemplate):
@@ -52,7 +52,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
         # 时间序列容器：计算技术指标用
         self.am = ArrayManager()
-        print("************************************************22222222222")
+        print("************************************************4444")
 
     def on_init(self):
         """
@@ -125,28 +125,26 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.arr_short=[]         #无仓位清空数据
                 aa=self.last_price - tick.last_price
                 if  self.action_status:
-                    if self.long_entered and self.long_time <= self.open_count and aa == 5 :
+                    if self.long_entered and aa == 5 and self.long_time <= self.open_count :
                         self.long_time += 1
                         self.buy(tick.last_price + 1, self.fixed_size)
-                    elif self.short_entered and self.short_time <= self.open_count and aa == -5  :
+                    elif self.short_entered and aa == -5  and self.short_time <= self.open_count :
                         self.short_time += 1
                         self.short(tick.last_price - 1, self.fixed_size)
+                    sleep(1)
                 else:
-                    if self.long_entered and self.long_time <= self.open_count and aa == 5:
+                    if self.long_entered and aa == 5 and self.long_time <= self.open_count :
                         self.long_time += 1
                         self.buy(tick.last_price + 1, self.fixed_size)
-                    elif self.short_entered and self.short_time <= self.open_count and aa == -5:
+                    elif self.short_entered and aa == -5 and self.short_time <= self.open_count :
                         self.short_time += 1
                         self.short(tick.last_price - 1, self.fixed_size)
-
-
+                    sleep(1)
             elif self.pos > 0 :
                 # 多头止损单
-                self.cancel_all()
                 self.sell(self.stop_long, abs(self.pos),True)
             elif self.pos < 0:
                 # 空头止损单
-                self.cancel_all()
                 self.cover(self.stop_short, abs(self.pos),True)
         # 收盘平仓
         else:
@@ -166,7 +164,7 @@ class DoubleMa22Strategy(CtaTemplate):
     def on_5min_bar(self, bar: BarData):
         """5分钟bar线"""
 
-        # 保存K线数据
+        # 保存bar数据
         self.am.update_bar(bar)
         if not self.am.inited:
             return
