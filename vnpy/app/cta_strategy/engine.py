@@ -227,8 +227,12 @@ class CtaEngine(BaseEngine):
         # Update strategy pos before calling on_trade method
         # 在调用on_trade方法之前更新策略pos
         if trade.direction == Direction.LONG:
+            if strategy.pos == 0:
+                strategy.long_time += 1
             strategy.pos += trade.volume
         else:
+            if strategy.pos == 0:
+                strategy.short_time += 1
             strategy.pos -= trade.volume
 
         self.call_strategy_func(strategy, strategy.on_trade, trade)
