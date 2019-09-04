@@ -348,8 +348,6 @@ class CtaEngine(BaseEngine):
 
         # Convert with offset converter
         req_list = self.offset_converter.convert_order_request(original_req, lock)
-        print("==================向CTP服务器发送请求的时候")
-        print(req_list)
         # Send Orders
         vt_orderids = []
 

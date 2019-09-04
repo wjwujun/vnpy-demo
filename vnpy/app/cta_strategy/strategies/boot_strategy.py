@@ -45,15 +45,13 @@ class DoubleMa22Strategy(CtaTemplate):
     action_status=True #点差
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
         """"""
-        super(DoubleMa22Strategy, self).__init__(
-            cta_engine, strategy_name, vt_symbol, setting
-        )
+        super(DoubleMa22Strategy, self).__init__(cta_engine, strategy_name, vt_symbol, setting)
 
         #self.bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
         self.bg = BarGenerator(self.on_bar)
         # 时间序列容器：计算技术指标用
         #self.am = ArrayManager()
-        print("************************************************444")
+        print("444************************************************444")
 
     def on_init(self):
         """
@@ -101,15 +99,18 @@ class DoubleMa22Strategy(CtaTemplate):
             for i in self.close_price:
                 if self.direction == Direction.LONG:
                     if stop_price > i and (i not in self.arr_long):
-                        self.stop_long = tick.last_price - 8
+                        self.stop_long = tick.last_price - 6
                         self.arr_long.append(i)
                 else:
                     if stop_price > i and (i not in self.arr_short):
-                        self.stop_short = tick.last_price + 8
+                        self.stop_short = tick.last_price + 6
                         self.arr_short.append(i)
             self.stop_long = max(self.current_price - 8, self.stop_long)
             self.stop_short = min(self.current_price + 8, self.stop_short)
-
+            if self.pnl < -100 and  self.direction == Direction.LONG:
+                self.sell(tick.last_price + 2, abs(self.pos))
+            elif self.pnl < -100 and self.direction == Direction.SHORT:
+                self.cover(tick.last_price - 2, abs(self.pos))
 
         if self.start_time< tick.datetime.time() < self.exit_time:
             # 当前无仓位
@@ -124,18 +125,20 @@ class DoubleMa22Strategy(CtaTemplate):
 
             elif self.pos > 0 :
                 # 多头止损单
-                if self.stop_long < tick.last_price -3:
+                if self.stop_long < tick.last_price - 2:
                     self.sell(self.stop_long, abs(self.pos),True)
+                    print("==================向CTP服务器发送,停止sell")
             elif self.pos < 0:
                 # 空头止损单
-                if self.stop_short < tick.last + 3:
+                if self.stop_short < tick.last_price + 2:
                     self.cover(self.stop_short, abs(self.pos),True)
+                    print("==================向CTP服务器发送,停止cover")
         # 收盘平仓
         else:
             if self.pos > 0:
-                self.sell(tick.last_price + 1, abs(self.pos))
+                self.sell(tick.last_price + 2, abs(self.pos))
             elif self.pos < 0:
-                self.cover(tick.last_price - 1, abs(self.pos))
+                self.cover(tick.last_price - 2, abs(self.pos))
 
     def on_bar(self, bar: BarData):
         """
