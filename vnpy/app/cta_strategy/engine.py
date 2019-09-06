@@ -227,19 +227,17 @@ class CtaEngine(BaseEngine):
         # Update strategy pos before calling on_trade method
         # 在调用on_trade方法之前更新策略pos
         if trade.direction == Direction.LONG:
-            if strategy.pos == 0:
-                strategy.long_time += 1
+            strategy.long_time += trade.volume
             strategy.pos += trade.volume
         else:
-            if strategy.pos == 0:
-                strategy.short_time += 1
+            strategy.short_time += trade.volume
             strategy.pos -= trade.volume
 
         self.call_strategy_func(strategy, strategy.on_trade, trade)
         # 保存相关策略参数到本地
         self.sync_strategy_data(strategy)
         # Update GUI
-        self.put_strategy_event(strategy)
+        # self.put_strategy_event(strategy)
 
     # 持仓数据处理方法
     def process_position_event(self, event: Event):

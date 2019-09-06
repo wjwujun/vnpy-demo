@@ -148,14 +148,14 @@ class CtpGateway(BaseGateway):
 
     def connect(self, setting: dict):
         """"""
-        userid = setting["用户名"]
-        password = setting["密码"]
-        brokerid = setting["经纪商代码"]
-        td_address = setting["交易服务器"]
-        md_address = setting["行情服务器"]
-        appid = setting["产品名称"]
-        auth_code = setting["授权编码"]
-        product_info = setting["产品信息"]
+        userid = setting["userid"]
+        password = setting["password"]
+        brokerid = setting["brokerid"]
+        td_address = setting["td_address"]
+        md_address = setting["md_address"]
+        appid = setting["appid"]
+        auth_code = setting["auth_code"]
+        product_info = setting["product_info"]
         
         if not td_address.startswith("tcp://"):
             td_address = "tcp://" + td_address

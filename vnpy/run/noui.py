@@ -18,16 +18,24 @@ SETTINGS["log.active"] = True
 SETTINGS["log.level"] = INFO
 SETTINGS["log.console"] = True
 
+# "userid": "33335939",
+# "password": "110120",
+# "brokerid": "3070",
+# "td_address": "tcp://120.136.130.130:32205",
+# "md_address": "tcp://120.136.130.130:32213",
+# "appid":vnpy_trade
+# "auth_code": "client_vnpywj_1.0",
+# "product_info": "client_vnpywj_1.0",
 
 ctp_setting = {
-    "用户名": "107462",
-    "密码": "110120",
-    "经纪商代码": "9999",
-    "交易服务器": "tcp://180.168.146.187:10101",
-    "行情服务器": "tcp://180.168.146.187:10111",
-    "产品名称": "simnow_client_test",
-    "授权编码": "0000000000000000",
-    "产品信息": ""
+    "userid": "107462",
+    "password": "110120",
+    "brokerid": "9999",
+    "td_address": "tcp://180.168.146.187:10101",
+    "md_address": "tcp://180.168.146.187:10111",
+    "appid": "simnow_client_test",
+    "auth_code": "0000000000000000",
+    "product_info": ""
 }
 
 
