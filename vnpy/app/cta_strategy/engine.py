@@ -169,6 +169,7 @@ class CtaEngine(BaseEngine):
         if not strategies:
             return
 
+        #触发停止单
         self.check_stop_order(tick)
         for strategy in strategies:
             #收到tick的时候，查询当前的持有情况
@@ -266,7 +267,7 @@ class CtaEngine(BaseEngine):
             database_manager.save_account_data([account])
 
 
-
+    #停止单条件
     def check_stop_order(self, tick: TickData):
 
         for stop_order in list(self.stop_orders.values()):
@@ -283,15 +284,22 @@ class CtaEngine(BaseEngine):
             if long_triggered or short_triggered:
                 strategy = self.strategies[stop_order.strategy_name]
 
+
                 # 在停止订单后立即执行
                 # 触发，使用限价（如果可用），否则
                 # 使用ask_price_5或bid_price_5erwise
                 if stop_order.direction == Direction.LONG:
+                    # 如果已经交易了3次，就不在进行
+                    if strategy.long_time <= strategy.open_count:
+                        continue
                     if tick.limit_up:
                         price = tick.limit_up
                     else:
                         price = tick.ask_price_5
                 else:
+                    # 如果已经交易了3次，就不在进行
+                    if strategy.short_time <= strategy.open_count:
+                        continue
                     if tick.limit_down:
                         price = tick.limit_down
                     else:

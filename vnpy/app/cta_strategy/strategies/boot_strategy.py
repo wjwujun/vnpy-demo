@@ -107,6 +107,7 @@ class DoubleMa22Strategy(CtaTemplate):
                         self.arr_short.append(i)
             self.stop_long = max(self.current_price - 8, self.stop_long)
             self.stop_short = min(self.current_price + 8, self.stop_short)
+            #防止断线后持仓超过
             if self.pnl < -100 and  self.direction == Direction.LONG:
                 self.sell(tick.last_price + 2, abs(self.pos))
             elif self.pnl < -100 and self.direction == Direction.SHORT:
@@ -118,19 +119,21 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.arr_long=[]
                 self.arr_short=[]
 
-                if self.long_entered and price_diff>=5 and price_diff<8  and self.long_time <= self.open_count :
+                if self.long_entered and price_diff>=3 and price_diff<8  and self.long_time <= self.open_count :
                     self.buy(tick.last_price +2, self.fixed_size)
-                elif self.short_entered and price_diff>-8 and price_diff <=-5 and self.short_time <= self.open_count :
+                    print("==================发送buy")
+                elif self.short_entered and price_diff>-3 and price_diff <=-5 and self.short_time <= self.open_count :
                     self.short(tick.last_price - 2, self.fixed_size)
+                    print("==================发送short")
 
             elif self.pos > 0 :
                 # 多头止损单
-                if self.stop_long < tick.last_price - 2:
+                if self.stop_long < tick.last_price - 4:
                     self.sell(self.stop_long, abs(self.pos),True)
                     print("==================向CTP服务器发送,停止sell")
             elif self.pos < 0:
                 # 空头止损单
-                if self.stop_short < tick.last_price + 2:
+                if self.stop_short < tick.last_price + 4:
                     self.cover(self.stop_short, abs(self.pos),True)
                     print("==================向CTP服务器发送,停止cover")
         # 收盘平仓
