@@ -283,23 +283,20 @@ class CtaEngine(BaseEngine):
 
             if long_triggered or short_triggered:
                 strategy = self.strategies[stop_order.strategy_name]
-
-
+                if strategy.pos != 0:  # 如果已经有持仓位
+                    continue
                 # 在停止订单后立即执行
                 # 触发，使用限价（如果可用），否则
                 # 使用ask_price_5或bid_price_5erwise
                 if stop_order.direction == Direction.LONG:
-                    # 如果已经交易了3次，就不在进行
-                    if strategy.long_time <= strategy.open_count:
-                        continue
                     if tick.limit_up:
                         price = tick.limit_up
                     else:
                         price = tick.ask_price_5
                 else:
                     # 如果已经交易了3次，就不在进行
-                    if strategy.short_time <= strategy.open_count:
-                        continue
+                    # if strategy.short_time <= strategy.open_count:
+                    #     continue
                     if tick.limit_down:
                         price = tick.limit_down
                     else:

@@ -39,7 +39,7 @@ class DoubleMa22Strategy(CtaTemplate):
     short_entered = False
     last_price= 0
     parameters = ["fixed_size"]
-
+    num=0
 
     open_spread=0       #开仓价之差
     action_status=True #点差
@@ -118,13 +118,15 @@ class DoubleMa22Strategy(CtaTemplate):
             if self.pos == 0 and self.pos < self.fixed_size:
                 self.arr_long=[]
                 self.arr_short=[]
-
-                if self.long_entered and price_diff>=3 and price_diff<8  and self.long_time <= self.open_count :
-                    self.buy(tick.last_price +2, self.fixed_size)
-                    print("==================发送buy")
-                elif self.short_entered and price_diff>-3 and price_diff <=-5 and self.short_time <= self.open_count :
-                    self.short(tick.last_price - 2, self.fixed_size)
-                    print("==================发送short")
+                if self.num<self.open_count:
+                    if self.long_entered :
+                        for i in [3, 5, 8]:
+                            self.buy(self.last_price - i, self.fixed_size,True)
+                        self.num = 2
+                    elif self.short_entered :
+                        for i in [3, 5, 8]:
+                            self.short(self.last_price + i, self.fixed_size,True)
+                        self.num = 2
 
             elif self.pos > 0 :
                 # 多头止损单
