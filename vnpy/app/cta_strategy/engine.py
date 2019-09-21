@@ -228,10 +228,8 @@ class CtaEngine(BaseEngine):
         # Update strategy pos before calling on_trade method
         # 在调用on_trade方法之前更新策略pos
         if trade.direction == Direction.LONG:
-            strategy.long_time += trade.volume
             strategy.pos += trade.volume
         else:
-            strategy.short_time += trade.volume
             strategy.pos -= trade.volume
 
         self.call_strategy_func(strategy, strategy.on_trade, trade)
@@ -249,8 +247,6 @@ class CtaEngine(BaseEngine):
         # print("1111111111111111111111111")
         strategy = self.strategies["DoubleMa22Strategy"]
         strategy.pnl = position.pnl
-        strategy.current_price = position.price
-        strategy.direction = position.direction
         if position.pnl!=0:
             #保存到mysql
             database_manager.save_position_data([position])

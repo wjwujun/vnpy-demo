@@ -22,7 +22,7 @@ class DoubleMa22Strategy(CtaTemplate):
     position_filename = "posotion_data.json"
 
     # 策略变量
-    fixed_size = 1      # 开仓数量
+    fixed_size = 10      # 开仓数量
     ma_value = 0         #5min avgrage
     exit_time = time(hour=14, minute=55)
     start_time = time(hour=8, minute=59)
@@ -87,7 +87,7 @@ class DoubleMa22Strategy(CtaTemplate):
             elif self.last_price < tick.open_price :
                 self.short_entered = True
 
-
+        #获取最新价格和开盘第一次价格的差异
         price_diff = self.last_price - tick.last_price
         print("查看当前盈亏：(%s),第一次价：(%s),当前价：(%s),开盘价：(%s),下单价：(%s),方向：(%s),"
               "多止损价：(%s),空止损价：(%s),多单次数(%s),空单次数(%s),当前仓位(%s)"%(
@@ -95,55 +95,61 @@ class DoubleMa22Strategy(CtaTemplate):
             self.stop_long,self.stop_short,self.long_time,self.short_time,self.pos))
         # 确定止平仓的价格范围
         if self.current_price != 0:
-            stop_price = abs(self.current_price - tick.last_price)
-            for i in self.close_price:
-                if self.direction == Direction.LONG:
-                    if stop_price > i and (i not in self.arr_long):
-                        self.stop_long = tick.last_price - 6
-                        self.arr_long.append(i)
-                else:
-                    if stop_price > i and (i not in self.arr_short):
-                        self.stop_short = tick.last_price + 6
-                        self.arr_short.append(i)
-            self.stop_long = max(self.current_price - 8, self.stop_long)
-            self.stop_short = min(self.current_price + 8, self.stop_short)
+            stop_price = self.current_price - tick.last_price  #stop_price=下单价-最新价，负数buy,是张，
+            if  self.direction == Direction.LONG:
+                if stop_price < 0:          #盈利
+                    self.get_stop_price(stop_price, tick)  # 获取最新的止损价格
+                else:                       #亏损
+                    self.stop_long=self.current_price-8     #亏损止损价
+            else:
+                if stop_price < 0:      #亏损
+                    self.stop_short=self.current_price-8        #亏损止损价
+                else:                   #盈利
+                    self.get_stop_price(stop_price, tick)  # 获取最新的止损价格
             #防止断线后持仓超过
-            if self.pnl < -100 and  self.direction == Direction.LONG:
+            if self.pnl < -100  and  self.direction == Direction.LONG:
                 self.sell(tick.last_price + 2, abs(self.pos))
             elif self.pnl < -100 and self.direction == Direction.SHORT:
                 self.cover(tick.last_price - 2, abs(self.pos))
 
         if self.start_time< tick.datetime.time() < self.exit_time:
             # 当前无仓位
-            if self.pos == 0 and self.pos < self.fixed_size:
-                self.arr_long=[]
-                self.arr_short=[]
-                if self.num<self.open_count:
-                    if self.long_entered :
-                        for i in [3, 5, 8]:
-                            self.buy(self.last_price - i, self.fixed_size,True)
-                        self.num = 2
-                    elif self.short_entered :
-                        for i in [3, 5, 8]:
-                            self.short(self.last_price + i, self.fixed_size,True)
-                        self.num = 2
+            if self.pos == 0 and self.pos < self.fixed_size and (self.long_time < self.open_count or self.short_time < self.open_count):
+                if self.long_entered and price_diff>=3 and price_diff<=10:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
+                    self.buy(tick.last_price + 2, self.fixed_size)
+                elif self.short_entered and price_diff<=-3 and price_diff>=-10:
+                    self.short(tick.last_price - 2, self.fixed_size)
 
             elif self.pos > 0 :
                 # 多头止损单
-                if self.stop_long < tick.last_price - 4:
-                    self.sell(self.stop_long, abs(self.pos),True)
-                    print("==================向CTP服务器发送,停止sell")
+                if self.stop_long > tick.last_price - 4:
+                    self.sell(self.stop_long, abs(self.pos),True)       #向CTP服务器发送,停止sell
             elif self.pos < 0:
                 # 空头止损单
                 if self.stop_short < tick.last_price + 4:
-                    self.cover(self.stop_short, abs(self.pos),True)
-                    print("==================向CTP服务器发送,停止cover")
+                    self.cover(self.stop_short, abs(self.pos),True)         #向CTP服务器发送,停止cover
+
         # 收盘平仓
         else:
             if self.pos > 0:
                 self.sell(tick.last_price + 2, abs(self.pos))
             elif self.pos < 0:
                 self.cover(tick.last_price - 2, abs(self.pos))
+    def get_stop_price(self,stop_price,tick):
+            if self.direction == Direction.LONG:
+                for i in self.close_price:
+                    if stop_price > i and i not in self.arr_long:
+                        self.cancel_all()
+                        self.stop_long=tick.last_price-6
+                        self.sell(tick.last_price - 6, abs(self.pos),True)       #多单止损
+                        self.arr_long.append(i)
+            else:
+                for i in self.close_price:
+                    if stop_price > i and i not in self.arr_short:
+                        self.cancel_all()
+                        self.stop_short = tick.last_price + 6
+                        self.cover(tick.last_price + 6, abs(self.pos), True)    #空单止损
+                        self.arr_short.append(i)
 
     def on_bar(self, bar: BarData):
         """
@@ -181,9 +187,20 @@ class DoubleMa22Strategy(CtaTemplate):
 
     def on_trade(self, trade: TradeData):
         """
-        Callback of new trade data update.
+            成交后初始止损价格
         """
-        self.put_event()
+        if trade.direction == Direction.LONG:
+            self.sell(trade.price - 8, abs(self.pos), True)  # 多单止损
+            self.stop_long=trade.price - 8
+            self.long_time += 1
+        else:
+            self.cover(trade.price + 8, abs(self.pos), True)  # 空单止损
+            self.stop_short = trade.price + 8
+            self.short_time += 1
+        self.current_price = trade.price
+        self.direction = trade.direction
+
+
 
     def on_stop_order(self, stop_order: StopOrder):
         """
