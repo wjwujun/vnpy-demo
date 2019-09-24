@@ -22,7 +22,7 @@ class DoubleMa22Strategy(CtaTemplate):
     position_filename = "posotion_data.json"
 
     # 策略变量
-    fixed_size = 10      # 开仓数量
+    fixed_size = 1      # 开仓数量
     ma_value = 0         #5min avgrage
     exit_time = time(hour=14, minute=55)
     start_time = time(hour=8, minute=59)
@@ -80,12 +80,16 @@ class DoubleMa22Strategy(CtaTemplate):
         Callback of new tick data update.
         """
         if self.last_price == 0:
-            self.last_price=tick.last_price
+            self.last_price = tick.last_price
             self.open_spread = abs(self.last_price - tick.open_price)
-            if self.last_price > tick.open_price :
+            if self.last_price > tick.open_price and self.open_spread < 20:
                 self.long_entered = True
-            elif self.last_price < tick.open_price :
+            elif self.last_price > tick.open_price and self.open_spread > 20:
                 self.short_entered = True
+            elif self.last_price < tick.open_price and self.open_spread < 20:
+                self.short_entered = True
+            elif self.last_price < tick.open_price and self.open_spread > 20:
+                self.long_entered = True
 
         #获取最新价格和开盘第一次价格的差异
         price_diff = self.last_price - tick.last_price

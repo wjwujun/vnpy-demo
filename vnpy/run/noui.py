@@ -35,15 +35,26 @@ SETTINGS["log.console"] = True
 # "appid": "simnow_client_test",
 # "auth_code": "0000000000000000",
 # "product_info": ""
+
+# ctp_setting = {
+#          "userid": "901203686",
+#          "password": "110120",
+#          "brokerid": "10086",
+#          "td_address": "tcp://106.37.231.6:42205",
+#          "md_address": "tcp://106.37.231.6:42213",
+#          "appid": "client_vnpyw_1.0",
+#          "auth_code": "FUZ9GACVZSRSS047",
+#          "product_info": ""
+# }
 ctp_setting = {
-    "userid": "33335939",
+    "userid": "107462",
     "password": "110120",
-    "brokerid": "3070",
-    "td_address": "tcp://120.136.130.130:32205",
-    "md_address": "tcp://120.136.130.130:32213",
-    "appid": " client_vnpywj_1.0",
-    "auth_code": "YB5NF7TP9U0H6L6O",
-    "product_info": "vnpy_trade"
+    "brokerid": "9999",
+    "td_address": "tcp://180.168.146.187:10101",
+    "md_address": "tcp://180.168.146.187:10111",
+    "appid": "simnow_client_test",
+    "auth_code": "0000000000000000",
+    "product_info": ""
 }
 
 
