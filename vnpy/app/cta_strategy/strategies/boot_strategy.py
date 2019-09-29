@@ -131,10 +131,12 @@ class DoubleMa22Strategy(CtaTemplate):
         if self.start_time< tick.datetime.time() < self.exit_time:
             # 当前无仓位
             if self.pos == 0 and self.pos < self.fixed_size and (self.long_time < self.open_count or self.short_time < self.open_count):
-                if self.long_entered and price_diff>=3 and price_diff<10:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
+                #if self.long_entered and price_diff>=3 and price_diff<10:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
+                if self.long_entered:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
                     self.buy(tick.last_price + 2, self.fixed_size)
                     self.stop_long = tick.last_price - 6
-                elif self.short_entered and price_diff<=-3 and price_diff>-10:
+                #elif self.short_entered and price_diff<=-3 and price_diff>-10:
+                elif self.short_entered :
                     self.short(tick.last_price - 2, self.fixed_size)
                     self.stop_short = tick.last_price + 6
 
