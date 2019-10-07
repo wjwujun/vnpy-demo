@@ -102,7 +102,6 @@ class DoubleMa22Strategy(CtaTemplate):
             self.stop_price = self.current_price - tick.last_price  #stop_price=下单价-最新价，负数buy,是张，
             if  self.direction == Direction.LONG:
                 if self.stop_price < 0:          #盈利
-                    #self.get_stop_price(stop_price, tick)  # 获取最新的止损价格
                     for i in self.close_price:
                         if abs(self.stop_price) > i and (i not in self.arr_long):
                             self.cancel_all()
@@ -110,23 +109,24 @@ class DoubleMa22Strategy(CtaTemplate):
                             self.sell(tick.last_price - 6, abs(self.pos), True)  # 多单止损
                             self.arr_long.append(i)
                 else:                       #亏损
-                    self.stop_long=min(self.current_price-8,self.stop_long)     #亏损止损价
+                    if self.stop_price >= 10:
+                        self.sell(tick.last_price - 2, abs(self.pos))                #亏损超过10点，立马平仓
+                    else:
+                        self.stop_long=min(self.current_price - 8,self.stop_long)     #亏损止损价
             else:
                 if self.stop_price < 0:      #亏损
-                    self.stop_short=min(self.current_price + 8,self.stop_short)       #亏损止损价
+                    if  self.stop_price <= -10:
+                        self.cover(tick.last_price + 2, abs(self.pos))                    #亏损超过10点，立马平仓
+                    else:
+                        self.stop_short=min(self.current_price + 8,self.stop_short)       #亏损止损价
                 else:                   #盈利
-                    #self.get_stop_price(stop_price, tick)  # 获取最新的止损价格
                     for i in self.close_price:
                         if self.stop_price > i and (i not in self.arr_short):
                             self.cancel_all()
                             self.stop_short = tick.last_price + 6
                             self.cover(tick.last_price + 6, abs(self.pos), True)    #空单止损
                             self.arr_short.append(i)
-            #防止断线后持仓超过
-            if self.pnl < -100  and  self.direction == Direction.LONG:
-                self.sell(tick.last_price - 2, abs(self.pos))
-            elif self.pnl < -100 and self.direction == Direction.SHORT:
-                self.cover(tick.last_price + 2, abs(self.pos))
+
 
         if self.start_time< tick.datetime.time() < self.exit_time:
             # 当前无仓位
