@@ -84,11 +84,11 @@ class DoubleMa22Strategy(CtaTemplate):
             self.open_spread = abs(self.last_price - tick.open_price)
             if self.last_price > tick.open_price and self.open_spread < 20:
                 self.long_entered = True
-            elif self.last_price > tick.open_price and self.open_spread > 20:
+            elif self.last_price > tick.open_price and self.open_spread >= 20:
                 self.short_entered = True
             elif self.last_price < tick.open_price and self.open_spread < 20:
                 self.short_entered = True
-            elif self.last_price < tick.open_price and self.open_spread > 20:
+            elif self.last_price < tick.open_price and self.open_spread >= 20:
                 self.long_entered = True
 
         #获取最新价格和开盘第一次价格的差异
@@ -112,13 +112,13 @@ class DoubleMa22Strategy(CtaTemplate):
                     if self.stop_price >= 10:
                         self.sell(tick.last_price - 2, abs(self.pos))                #亏损超过10点，立马平仓
                     else:
-                        self.stop_long=min(self.current_price - 8,self.stop_long)     #亏损止损价
+                        self.stop_long=min(self.current_price - 6,self.stop_long)     #亏损止损价
             else:
                 if self.stop_price < 0:      #亏损
                     if  self.stop_price <= -10:
                         self.cover(tick.last_price + 2, abs(self.pos))                    #亏损超过10点，立马平仓
                     else:
-                        self.stop_short=min(self.current_price + 8,self.stop_short)       #亏损止损价
+                        self.stop_short=min(self.current_price + 6,self.stop_short)       #亏损止损价
                 else:                   #盈利
                     for i in self.close_price:
                         if self.stop_price > i and (i not in self.arr_short):
@@ -131,10 +131,10 @@ class DoubleMa22Strategy(CtaTemplate):
         if self.start_time< tick.datetime.time() < self.exit_time:
             # 当前无仓位
             if self.pos == 0 and self.pos < self.fixed_size and (self.long_time < self.open_count or self.short_time < self.open_count):
-                if self.long_entered and price_diff>=3 and price_diff<10:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
+                if self.long_entered and price_diff>=-6 and price_diff<-3:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
                     self.buy(tick.last_price + 2, self.fixed_size)
                     self.stop_long = tick.last_price - 6
-                elif self.short_entered and price_diff<=-3 and price_diff>-10:
+                elif self.short_entered and price_diff<=6 and price_diff>3:
                     self.short(tick.last_price - 2, self.fixed_size)
                     self.stop_short = tick.last_price + 6
 
