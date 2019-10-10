@@ -118,7 +118,7 @@ class DoubleMa22Strategy(CtaTemplate):
                     if  self.stop_price <= -10:
                         self.cover(tick.last_price + 2, abs(self.pos))                    #亏损超过10点，立马平仓
                     else:
-                        self.stop_short=max(self.current_price + 6,self.stop_short)       #亏损止损价
+                        self.stop_short=min(self.current_price + 6,self.stop_short)       #亏损止损价
                 else:                   #盈利
                     for i in self.close_price:
                         if self.stop_price > i and (i not in self.arr_short):
