@@ -32,7 +32,7 @@ class DoubleMa22Strategy(CtaTemplate):
     stop_long = 0  # 多头止损
     stop_short = 0  # 空头止损
 
-    open_count=2
+    open_count = 3
     long_time = 0
     short_time = 0
     long_entered = False
@@ -131,28 +131,32 @@ class DoubleMa22Strategy(CtaTemplate):
         if self.start_time< tick.datetime.time() < self.exit_time:
             # 当前无仓位
             if self.pos == 0 and self.pos < self.fixed_size and (self.long_time < self.open_count or self.short_time < self.open_count):
+                #清空停止数据
+                self.arr_long=[]
+                self.arr_short=[]
+                self.stop_short=0
+                self.stop_long=0
+
                 if self.long_entered and price_diff>=-6 and price_diff<=-3:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
-                    self.buy(tick.last_price + 2, self.fixed_size)
+                    self.buy(tick.last_price + 1, self.fixed_size)
                     self.stop_long = tick.last_price - 6
                 elif self.short_entered and price_diff<=6 and price_diff>=3:
-                    self.short(tick.last_price - 2, self.fixed_size)
+                    self.short(tick.last_price - 1, self.fixed_size)
                     self.stop_short = tick.last_price + 6
 
             elif self.pos > 0 :  # 多头止损单
-                self.sell(self.stop_long, abs(self.pos),True)       #向CTP服务器发送,停止sell
-                if tick.last_price - 2 <= self.stop_long :
+                #self.sell(self.stop_long, abs(self.pos),True)      #向CTP服务器发送,停止sell
+                if tick.last_price - 1 <= self.stop_long :
                     self.sell(self.stop_long, abs(self.pos))
             elif self.pos < 0:   # 空头止损单
-                self.cover(self.stop_short, abs(self.pos),True)         #向CTP服务器发送,停止cover
-                if tick.last_price + 2 >= self.stop_short :
+                #self.cover(self.stop_short, abs(self.pos),True)         #向CTP服务器发送,停止cover
+                if tick.last_price + 1 >= self.stop_short :
                     self.cover(self.stop_short, abs(self.pos))
         else:   # 收盘平仓
             if self.pos > 0:
-                self.sell(tick.last_price - 2, abs(self.pos),True)
-                self.sell(tick.last_price - 2, abs(self.pos))
+                self.sell(tick.last_price - 1, abs(self.pos))
             elif self.pos < 0:
-                self.cover(tick.last_price + 2, abs(self.pos),True)
-                self.cover(tick.last_price + 2, abs(self.pos))
+                self.cover(tick.last_price + 1, abs(self.pos))
 
 
     def get_stop_price(self,stop_price,tick):
