@@ -26,7 +26,7 @@ class DoubleMa22Strategy(CtaTemplate):
     ma_value = 0         #5min avgrage
     exit_time = time(hour=14, minute=55)
     start_time = time(hour=8, minute=59)
-    close_price=[5,10,20,30,40,50,60,70,80,90]  #止盈等级，根据等级来确定止盈的价格
+    close_price=[6,12,20,30,40,50,60,70,80,90]  #止盈等级，根据等级来确定止盈的价格
     arr_long = []  # 确定止盈的范围
     arr_short = []  # 确定止盈的范围
     stop_long = 0  # 多头止损
@@ -161,21 +161,6 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.cover(tick.last_price + 1, abs(self.pos))
 
 
-    def get_stop_price(self,stop_price,tick):
-            if self.direction == Direction.LONG:
-                for i in self.close_price:
-                    if stop_price > i and i not in self.arr_long:
-                        self.cancel_all()
-                        self.stop_long=tick.last_price-6
-                        self.sell(tick.last_price - 6, abs(self.pos),True)       #多单止损
-                        self.arr_long.append(i)
-            else:
-                for i in self.close_price:
-                    if stop_price > i and i not in self.arr_short:
-                        self.cancel_all()
-                        self.stop_short = tick.last_price + 6
-                        self.cover(tick.last_price + 6, abs(self.pos), True)    #空单止损
-                        self.arr_short.append(i)
 
     def on_bar(self, bar: BarData):
         """
