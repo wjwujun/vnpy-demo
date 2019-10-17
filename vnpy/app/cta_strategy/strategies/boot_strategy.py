@@ -106,7 +106,7 @@ class DoubleMa22Strategy(CtaTemplate):
                         if abs(self.stop_price) > i and (i not in self.arr_long):
                             self.cancel_all()
                             self.stop_long = tick.last_price - 6
-                            self.sell(self.stop_long, abs(self.pos), True)  # 多单止盈
+                            #self.sell(self.stop_long, abs(self.pos), True)  # 多单止盈
                             self.arr_long.append(i)
                 else:                       #亏损
                     if self.stop_price >= 10:
@@ -124,7 +124,7 @@ class DoubleMa22Strategy(CtaTemplate):
                         if self.stop_price > i and (i not in self.arr_short):
                             self.cancel_all()
                             self.stop_short = tick.last_price + 6
-                            self.cover(self.stop_short, abs(self.pos), True)    #空单止盈
+                            #self.cover(self.stop_short, abs(self.pos), True)    #空单止盈
                             self.arr_short.append(i)
 
 
@@ -136,6 +136,8 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.arr_short=[]
                 self.stop_short=0
                 self.stop_long=0
+                self.current_price=0
+                self.direction=""
 
                 if self.long_entered and price_diff>=-6 and price_diff<=-3:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
                     self.buy(tick.last_price + 1, self.fixed_size)
@@ -214,11 +216,11 @@ class DoubleMa22Strategy(CtaTemplate):
             成交后初始止损价格
         """
         if trade.direction == Direction.LONG:
-            self.sell(trade.price - 8, abs(self.pos), True)  # 多单止损
+            #self.sell(trade.price - 8, abs(self.pos), True)  # 多单止损
             self.stop_long=trade.price - 8
             self.long_time += 1
         else:
-            self.cover(trade.price + 8, abs(self.pos), True)  # 空单止损
+            #self.cover(trade.price + 8, abs(self.pos), True)  # 空单止损
             self.stop_short = trade.price + 8
             self.short_time += 1
         self.current_price = trade.price
