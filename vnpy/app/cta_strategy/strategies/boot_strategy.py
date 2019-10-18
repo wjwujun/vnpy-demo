@@ -139,10 +139,10 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.current_price=0
                 self.direction=""
 
-                if self.long_entered and price_diff>=-4 and price_diff<=-3:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
+                if self.long_entered and price_diff in [-4,-3]:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
                     self.buy(tick.last_price, self.fixed_size)
                     self.stop_long = tick.last_price - 6
-                elif self.short_entered and price_diff<=4 and price_diff>=3:
+                elif self.short_entered and price_diff in [4,3]:
                     self.short(tick.last_price, self.fixed_size)
                     self.stop_short = tick.last_price + 6
 
