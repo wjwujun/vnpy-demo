@@ -18,14 +18,7 @@ SETTINGS["log.active"] = True
 SETTINGS["log.level"] = INFO
 SETTINGS["log.console"] = True
 
-# "userid": "33335939",
-# "password": "110120",
-# "brokerid": "3070",
-# "td_address": "tcp://120.136.130.130:32205",
-# "md_address": "tcp://120.136.130.130:32213",
-# "appid":vnpy_trade
-# "auth_code": "client_vnpywj_1.0",
-# "product_info": "client_vnpywj_1.0",
+
 
 # "userid": "107462",
 # "password": "110120",

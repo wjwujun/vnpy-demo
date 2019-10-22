@@ -93,10 +93,10 @@ class DoubleMa22Strategy(CtaTemplate):
 
         #获取最新价格和开盘第一次价格的差异
         price_diff = self.last_price - tick.last_price
-        print("查看当前盈亏：(%s),第一次价：(%s),当前价：(%s),开盘价：(%s),下单价：(%s),方向：(%s),"
-              "多止损价：(%s),空止损价：(%s),多单次数(%s),空单次数(%s),当前仓位(%s)"%(
-            self.pnl,self.last_price,tick.last_price,tick.open_price,self.current_price,self.direction,
-            self.stop_long,self.stop_short,self.long_time,self.short_time,self.pos))
+        print("余额:(%s),盈亏：(%s),第一次价：(%s),当前价：(%s),开盘价：(%s),下单价：(%s),"
+              "方向：(%s),多止损价：(%s),空止损价：(%s),多单次数(%s),空单次数(%s),当前仓位(%s)"%(
+            self.account,self.pnl,self.last_price,tick.last_price,tick.open_price,self.current_price,
+            self.direction,self.stop_long,self.stop_short,self.long_time,self.short_time,self.pos))
         # 确定止平仓的价格范围
         if self.current_price != 0:
             self.stop_price = self.current_price - tick.last_price  #stop_price=下单价-最新价，负数buy,是张，

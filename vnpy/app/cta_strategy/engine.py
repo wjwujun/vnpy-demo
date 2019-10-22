@@ -55,6 +55,7 @@ class CtaEngine(BaseEngine):
 
         self.classes = {}           # class_name: stategy_class
         self.strategies = {}        # strategy_name: strategy
+        self.strategy= Any
 
         self.symbol_strategy_map = defaultdict(list)                   # vt_symbol: strategy list
         self.orderid_strategy_map = {}  # vt_orderid: strategy
@@ -85,6 +86,7 @@ class CtaEngine(BaseEngine):
         self.load_strategy_data()
         self.register_event()
         self.write_log("CTA策略引擎初始化成功")
+        self.strategy = self.strategies["DoubleMa22Strategy"]
 
 
 
@@ -245,8 +247,8 @@ class CtaEngine(BaseEngine):
         #update holding position data
         self.offset_converter.update_position(position)
         # print("1111111111111111111111111")
-        strategy = self.strategies["DoubleMa22Strategy"]
-        strategy.pnl = position.pnl
+        #strategy = self.strategies["DoubleMa22Strategy"]
+        self.strategy.pnl = position.pnl
         if position.pnl!=0:
             #保存到mysql
             database_manager.save_position_data([position])
@@ -257,7 +259,7 @@ class CtaEngine(BaseEngine):
         #print("账户信息查看=================================")
         #print(account)
         #账户数据插入mysql
-
+        self.strategy.account = account.balance
         if account.balance != self.balance_now:
             self.balance_now=account.balance
             database_manager.save_account_data([account])

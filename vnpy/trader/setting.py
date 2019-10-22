@@ -26,7 +26,7 @@ SETTINGS = {
     "rqdata.password": "",
 
     "database.driver": "mysql",  # see database.Driver
-    "database.database": "CTP",  # for sqlite, use this as filepath
+    "database.database": "CTP2",  # for sqlite, use this as filepath
     "database.host": "47.98.136.216",
     "database.port": 3306,
     "database.user": "root",

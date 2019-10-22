@@ -33,6 +33,7 @@ class CtaTemplate(ABC):
         self.trading = False
         self.pos = 0
         self.pnl = 0
+        self.account=0
         self.current_price=0
         self.direction=""
 
