@@ -26,7 +26,7 @@ class DoubleMa22Strategy(CtaTemplate):
     ma_value = 0         #5min avgrage
     exit_time = time(hour=14, minute=55)
     start_time = time(hour=8, minute=59)
-    close_price=[6,12,20,30,40,50,60,70,80,90]  #止盈等级，根据等级来确定止盈的价格
+    close_price=[6,15,25,35,45,55,65,75,85,95,105]  #止盈等级，根据等级来确定止盈的价格
     arr_long = []  # 确定止盈的范围
     arr_short = []  # 确定止盈的范围
     stop_long = 0  # 多头止损
