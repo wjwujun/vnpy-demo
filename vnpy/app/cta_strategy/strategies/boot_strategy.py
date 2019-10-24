@@ -26,13 +26,13 @@ class DoubleMa22Strategy(CtaTemplate):
     ma_value = 0         #5min avgrage
     exit_time = time(hour=14, minute=55)
     start_time = time(hour=8, minute=59)
-    close_price=[6,15,25,35,45,55,65,75,85,95,105]  #止盈等级，根据等级来确定止盈的价格
+    close_price=[6,10,15,25,35,45,55,65,75,85,95,105]  #止盈等级，根据等级来确定止盈的价格
     arr_long = []  # 确定止盈的范围
     arr_short = []  # 确定止盈的范围
     stop_long = 0  # 多头止损
     stop_short = 0  # 空头止损
 
-    open_count = 3
+    open_count = 2
     long_time = 0
     short_time = 0
     long_entered = False
@@ -82,13 +82,13 @@ class DoubleMa22Strategy(CtaTemplate):
         if self.last_price == 0:
             self.last_price = tick.last_price
             self.open_spread = abs(self.last_price - tick.open_price)
-            if self.last_price > tick.open_price and self.open_spread < 20:
+            if self.last_price > tick.open_price and self.open_spread < 18:
                 self.long_entered = True
-            elif self.last_price > tick.open_price and self.open_spread >= 20:
+            elif self.last_price > tick.open_price and self.open_spread >= 18:
                 self.short_entered = True
-            elif self.last_price < tick.open_price and self.open_spread < 20:
+            elif self.last_price < tick.open_price and self.open_spread < 18:
                 self.short_entered = True
-            elif self.last_price < tick.open_price and self.open_spread >= 20:
+            elif self.last_price < tick.open_price and self.open_spread >= 18:
                 self.long_entered = True
 
         #获取最新价格和开盘第一次价格的差异
@@ -140,10 +140,10 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.direction=""
 
                 if self.long_entered and price_diff in [-4,-3]:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
-                    self.buy(tick.last_price, self.fixed_size)
+                    self.buy(self.last_price+1, self.fixed_size)
                     self.stop_long = tick.last_price - 6
                 elif self.short_entered and price_diff in [4,3]:
-                    self.short(tick.last_price, self.fixed_size)
+                    self.short(self.last_price-1, self.fixed_size)
                     self.stop_short = tick.last_price + 6
 
             elif self.pos > 0 :  # 多头止损单
@@ -202,11 +202,11 @@ class DoubleMa22Strategy(CtaTemplate):
         """
         if trade.direction == Direction.LONG:
             #self.sell(trade.price - 8, abs(self.pos), True)  # 多单止损
-            self.stop_long=trade.price - 8
+            self.stop_long=trade.price - 7
             self.long_time += 1
         else:
             #self.cover(trade.price + 8, abs(self.pos), True)  # 空单止损
-            self.stop_short = trade.price + 8
+            self.stop_short = trade.price + 7
             self.short_time += 1
         self.current_price = trade.price
         self.direction = trade.direction
