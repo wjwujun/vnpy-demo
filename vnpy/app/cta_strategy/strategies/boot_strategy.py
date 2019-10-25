@@ -105,25 +105,25 @@ class DoubleMa22Strategy(CtaTemplate):
                     for i in self.close_price:
                         if abs(self.stop_price) > i and (i not in self.arr_long):
                             self.cancel_all()
-                            self.stop_long = tick.last_price - 6
+                            self.stop_long = tick.last_price - 5
                             #self.sell(self.stop_long, abs(self.pos), True)  # 多单止盈
                             self.arr_long.append(i)
                 else:                       #亏损
                     if self.stop_price >= 10:
                         self.sell(tick.last_price - 1, abs(self.pos))                #亏损超过10点，立马平仓
                     else:
-                        self.stop_long=max(self.current_price - 6,self.stop_long)     #亏损止损价
+                        self.stop_long=max(self.current_price - 5,self.stop_long)     #亏损止损价
             else:
                 if self.stop_price < 0:      #亏损
                     if  self.stop_price <= -10:
                         self.cover(tick.last_price + 1, abs(self.pos))                    #亏损超过10点，立马平仓
                     else:
-                        self.stop_short=min(self.current_price + 6,self.stop_short)       #亏损止损价
+                        self.stop_short=min(self.current_price + 5,self.stop_short)       #亏损止损价
                 else:                   #盈利
                     for i in self.close_price:
                         if self.stop_price > i and (i not in self.arr_short):
                             self.cancel_all()
-                            self.stop_short = tick.last_price + 6
+                            self.stop_short = tick.last_price + 5
                             #self.cover(self.stop_short, abs(self.pos), True)    #空单止盈
                             self.arr_short.append(i)
 
@@ -139,20 +139,20 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.current_price=0
                 self.direction=""
 
-                if self.long_entered and price_diff in [-4,-3]:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
-                    self.buy(self.last_price+1, self.fixed_size)
+                if self.long_entered and price_diff in [-2,-1]:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
+                    self.buy(tick.last_price+1, self.fixed_size)
                     self.stop_long = tick.last_price - 6
-                elif self.short_entered and price_diff in [4,3]:
-                    self.short(self.last_price-1, self.fixed_size)
+                elif self.short_entered and price_diff in [2,1]:
+                    self.short(tick.last_price-1, self.fixed_size)
                     self.stop_short = tick.last_price + 6
 
             elif self.pos > 0 :  # 多头止损单
                 #self.sell(self.stop_long, abs(self.pos),True)      #向CTP服务器发送,停止sell
-                if tick.last_price - 1 <= self.stop_long :
+                if tick.last_price <= self.stop_long :
                     self.sell(self.stop_long, abs(self.pos))
             elif self.pos < 0:   # 空头止损单
                 #self.cover(self.stop_short, abs(self.pos),True)         #向CTP服务器发送,停止cover
-                if tick.last_price + 1 >= self.stop_short :
+                if tick.last_price >= self.stop_short :
                     self.cover(self.stop_short, abs(self.pos))
         else:   # 收盘平仓
             if self.pos > 0:
