@@ -33,7 +33,7 @@ class DoubleMa22Strategy(CtaTemplate):
     stop_long = 0  # 多头止损
     stop_short = 0  # 空头止损
 
-    open_count = 2
+    open_count = 3
     long_time = 0
     short_time = 0
     long_entered = False
