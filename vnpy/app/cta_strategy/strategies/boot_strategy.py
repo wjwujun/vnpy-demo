@@ -33,7 +33,7 @@ class DoubleMa22Strategy(CtaTemplate):
     stop_long = 0  # 多头止损
     stop_short = 0  # 空头止损
 
-    open_count = 3
+    open_count = 2
     long_time = 0
     short_time = 0
     long_entered = False
@@ -52,7 +52,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.bg = BarGenerator(self.on_bar)
         # 时间序列容器：计算技术指标用
         #self.am = ArrayManager()
-        print("444************************************************444")
+        print("999999999999999************************************************444")
 
     def on_init(self):
         """
@@ -127,7 +127,7 @@ class DoubleMa22Strategy(CtaTemplate):
                         if self.stop_price >= i and (i not in self.arr_short):
                             self.cancel_all()
                             if i in self.close_price_two:
-                                self.stop_long = tick.last_price + 3
+                                self.stop_short = tick.last_price + 3
                             else:
                                 self.stop_short = tick.last_price + 5
                             self.arr_short.append(i)
