@@ -19,7 +19,6 @@ from vnpy.trader.utility import load_json, save_json
 
 class DoubleMa22Strategy(CtaTemplate):
     author = "wj"
-    position_filename = "posotion_data.json"
 
     # 策略变量
     fixed_size = 1      # 开仓数量
@@ -27,7 +26,7 @@ class DoubleMa22Strategy(CtaTemplate):
     exit_time = time(hour=14, minute=55)
     start_time = time(hour=8, minute=59)
     close_price=[4,7,10,15,25,35,45,55,65,75,85,95,105]  #止盈等级，根据等级来确定止盈的价格
-    close_price_two=[4,7]
+    close_price_two=[4,7,10]
     arr_long = []  # 确定止盈的范围
     arr_short = []  # 确定止盈的范围
     stop_long = 0  # 多头止损
@@ -38,8 +37,7 @@ class DoubleMa22Strategy(CtaTemplate):
     short_time = 0
     long_entered = False
     short_entered = False
-    last_price= 0
-    parameters = ["fixed_size"]
+    last_price = 0
     num=0
     stop_price=0
     open_spread=0       #开仓价之差
@@ -52,7 +50,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.bg = BarGenerator(self.on_bar)
         # 时间序列容器：计算技术指标用
         #self.am = ArrayManager()
-        print("999999999999999************************************************444")
+        print("zuixin************************************************444")
 
     def on_init(self):
         """
@@ -146,17 +144,15 @@ class DoubleMa22Strategy(CtaTemplate):
 
                 if self.long_entered and price_diff in [-2,-1]:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
                     self.buy(tick.last_price+1, self.fixed_size)
-                    self.stop_long = tick.last_price - 6
+                    self.stop_long = tick.last_price - 5
                 elif self.short_entered and price_diff in [2,1]:
                     self.short(tick.last_price-1, self.fixed_size)
-                    self.stop_short = tick.last_price + 6
+                    self.stop_short = tick.last_price + 5
 
             elif self.pos > 0 :  # 多头止损单
-                #self.sell(self.stop_long, abs(self.pos),True)      #向CTP服务器发送,停止sell
                 if tick.last_price <= self.stop_long :
                     self.sell(self.stop_long, abs(self.pos))
             elif self.pos < 0:   # 空头止损单
-                #self.cover(self.stop_short, abs(self.pos),True)         #向CTP服务器发送,停止cover
                 if tick.last_price >= self.stop_short :
                     self.cover(self.stop_short, abs(self.pos))
         else:   # 收盘平仓
@@ -190,10 +186,6 @@ class DoubleMa22Strategy(CtaTemplate):
 
 
 
-    def clearData(self):
-        self.position = {}
-        save_json(self.position_filename, {})
-
 
     def on_order(self, order: OrderData):
         """
@@ -206,12 +198,10 @@ class DoubleMa22Strategy(CtaTemplate):
             成交后初始止损价格
         """
         if trade.direction == Direction.LONG:
-            #self.sell(trade.price - 8, abs(self.pos), True)  # 多单止损
-            self.stop_long=trade.price - 7
+            self.stop_long=trade.price - 5
             self.long_time += 1
         else:
-            #self.cover(trade.price + 8, abs(self.pos), True)  # 空单止损
-            self.stop_short = trade.price + 7
+            self.stop_short = trade.price + 5
             self.short_time += 1
         self.current_price = trade.price
         self.direction = trade.direction
