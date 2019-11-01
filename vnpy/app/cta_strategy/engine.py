@@ -55,7 +55,6 @@ class CtaEngine(BaseEngine):
 
         self.classes = {}           # class_name: stategy_class
         self.strategies = {}        # strategy_name: strategy
-        self.strategy= Any
 
         self.symbol_strategy_map = defaultdict(list)                   # vt_symbol: strategy list
         self.orderid_strategy_map = {}  # vt_orderid: strategy
@@ -75,6 +74,8 @@ class CtaEngine(BaseEngine):
         self.offset_converter = OffsetConverter(self.main_engine)
         self.bg = BarGenerator(self.on_bar)
         self.balance_now=0.0
+        self.account= 0.0
+        self.pnl= 0.0
 
     def init_engine(self):
         """
@@ -86,7 +87,6 @@ class CtaEngine(BaseEngine):
         self.load_strategy_data()
         self.register_event()
         self.write_log("CTA策略引擎初始化成功")
-        self.strategy = self.strategies["DoubleMa22Strategy"]
 
 
 
@@ -248,7 +248,7 @@ class CtaEngine(BaseEngine):
         self.offset_converter.update_position(position)
         # print("1111111111111111111111111")
         #strategy = self.strategies["DoubleMa22Strategy"]
-        self.strategy.pnl = position.pnl
+        self.pnl = position.pnl
         if position.pnl!=0:
             #保存到mysql
             database_manager.save_position_data([position])
@@ -259,7 +259,7 @@ class CtaEngine(BaseEngine):
         #print("账户信息查看=================================")
         #print(account)
         #账户数据插入mysql
-        self.strategy.account = account.balance
+        self.account = account.balance
         if account.balance != self.balance_now:
             self.balance_now=account.balance
             database_manager.save_account_data([account])
@@ -283,18 +283,12 @@ class CtaEngine(BaseEngine):
                 strategy = self.strategies[stop_order.strategy_name]
                 if strategy.pos != 0:  # 如果已经有持仓位
                     continue
-                # 在停止订单后立即执行
-                # 触发，使用限价（如果可用），否则
-                # 使用ask_price_5或bid_price_5erwise
                 if stop_order.direction == Direction.LONG:
                     if tick.limit_up:
                         price = tick.limit_up
                     else:
                         price = tick.ask_price_5
                 else:
-                    # 如果已经交易了3次，就不在进行
-                    # if strategy.short_time <= strategy.open_count:
-                    #     continue
                     if tick.limit_down:
                         price = tick.limit_down
                     else:

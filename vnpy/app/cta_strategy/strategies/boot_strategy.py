@@ -50,7 +50,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.bg = BarGenerator(self.on_bar)
         # 时间序列容器：计算技术指标用
         #self.am = ArrayManager()
-        print("zuixin************************************************444")
+        print("aaaaaaaaaa************************************************444")
 
     def on_init(self):
         """
@@ -94,7 +94,7 @@ class DoubleMa22Strategy(CtaTemplate):
         price_diff = self.last_price - tick.last_price
         print("余额:(%s),盈亏：(%s),第一次价：(%s),当前价：(%s),开盘价：(%s),下单价：(%s),"
               "方向：(%s),多止损价：(%s),空止损价：(%s),多单次数(%s),空单次数(%s),当前仓位(%s)"%(
-            self.account,self.pnl,self.last_price,tick.last_price,tick.open_price,self.current_price,
+            self.cta_engine.account,self.cta_engine.pnl,self.last_price,tick.last_price,tick.open_price,self.current_price,
             self.direction,self.stop_long,self.stop_short,self.long_time,self.short_time,self.pos))
         # 确定止平仓的价格范围
         if self.current_price != 0:
@@ -142,10 +142,10 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.current_price=0
                 self.direction=""
 
-                if self.long_entered and price_diff in [-2,-1]:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
+                if self.long_entered and price_diff in [4,5]:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
                     self.buy(tick.last_price+1, self.fixed_size)
                     self.stop_long = tick.last_price - 5
-                elif self.short_entered and price_diff in [2,1]:
+                elif self.short_entered and price_diff in [-4,-5]:
                     self.short(tick.last_price-1, self.fixed_size)
                     self.stop_short = tick.last_price + 5
 

@@ -46,7 +46,7 @@ arr=["a","a",]
 with open("word.txt","r+", encoding='utf-8') as f:
     for line in f:
         if len(line)!=1:
-            print(line.split(" ")[0][0:1])
-            file.write(line.split(" ")[0]+"       "+line.split(" ")[1])
+                file.write(line.split(" ")[0] + "       " + line.split(" ")[1])
+
 
 
