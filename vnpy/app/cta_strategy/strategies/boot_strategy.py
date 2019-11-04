@@ -25,7 +25,7 @@ class DoubleMa22Strategy(CtaTemplate):
     ma_value = 0         #5min avgrage
     exit_time = time(hour=14, minute=55)
     start_time = time(hour=8, minute=59)
-    close_price=[4,7,10,15,25,35,45,55,65,75,85,95,105]  #止盈等级，根据等级来确定止盈的价格
+    close_price=[4,7,10,15,20,25,30,35,40,45,50,60,70,80,90,100,125,200,250,300,350,400,450,500]  #止盈等级，根据等级来确定止盈的价格
     close_price_two=[4,7,10]
     arr_long = []  # 确定止盈的范围
     arr_short = []  # 确定止盈的范围
@@ -81,21 +81,22 @@ class DoubleMa22Strategy(CtaTemplate):
         if self.last_price == 0:
             self.last_price = tick.last_price
             self.open_spread = abs(self.last_price - tick.open_price)
-            if self.last_price > tick.open_price and self.open_spread < 18:
+            if self.last_price >= tick.open_price and self.open_spread < 18:
                 self.long_entered = True
             elif self.last_price > tick.open_price and self.open_spread >= 18:
                 self.short_entered = True
-            elif self.last_price < tick.open_price and self.open_spread < 18:
+            elif self.last_price <= tick.open_price and self.open_spread < 18:
                 self.short_entered = True
             elif self.last_price < tick.open_price and self.open_spread >= 18:
                 self.long_entered = True
 
         #获取最新价格和开盘第一次价格的差异
         price_diff = self.last_price - tick.last_price
-        print("余额:(%s),盈亏：(%s),第一次价：(%s),当前价：(%s),开盘价：(%s),下单价：(%s),"
-              "方向：(%s),多止损价：(%s),空止损价：(%s),多单次数(%s),空单次数(%s),当前仓位(%s)"%(
-            self.cta_engine.account,self.cta_engine.pnl,self.last_price,tick.last_price,tick.open_price,self.current_price,
-            self.direction,self.stop_long,self.stop_short,self.long_time,self.short_time,self.pos))
+        print("余额:(%s),盈亏：(%s),1次价：(%s),当前价：(%s),开盘价：(%s),下单价：(%s),"
+              "多空: (%s,%s),方向：(%s),多止损价：(%s),空止损：(%s),多次数(%s),空次数(%s),仓位(%s)"%(
+            self.cta_engine.account,self.cta_engine.pnl,self.last_price,tick.last_price,tick.open_price,
+            self.current_price,self.long_entered,self.short_entered,self.direction,self.stop_long,self.stop_short,
+            self.long_time,self.short_time,self.pos))
         # 确定止平仓的价格范围
         if self.current_price != 0:
             self.stop_price = self.current_price - tick.last_price  #stop_price=下单价-最新价，负数buy,是张，
@@ -142,11 +143,18 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.current_price=0
                 self.direction=""
 
-                if self.long_entered and price_diff in [4,5]:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
-                    self.buy(tick.last_price+1, self.fixed_size)
+                if self.long_entered:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
+                    if  price_diff in [4,5]:
+                        self.buy(tick.last_price+1, self.fixed_size)
+                    elif price_diff in [-5,-6]:
+                        self.buy(tick.last_price + 1, self.fixed_size)
                     self.stop_long = tick.last_price - 5
-                elif self.short_entered and price_diff in [-4,-5]:
-                    self.short(tick.last_price-1, self.fixed_size)
+                elif self.short_entered :
+                    if  price_diff in [-4,-5]:
+                        self.short(tick.last_price-1, self.fixed_size)
+                    elif price_diff in [5,6]:
+                        self.short(tick.last_price - 1, self.fixed_size)
+
                     self.stop_short = tick.last_price + 5
 
             elif self.pos > 0 :  # 多头止损单
