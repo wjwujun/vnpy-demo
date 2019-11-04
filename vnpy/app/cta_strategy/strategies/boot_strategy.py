@@ -50,7 +50,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.bg = BarGenerator(self.on_bar)
         # 时间序列容器：计算技术指标用
         #self.am = ArrayManager()
-        print("aaaaaaaaaa************************************************444")
+        print("2019114************************************************444")
 
     def on_init(self):
         """
@@ -81,11 +81,11 @@ class DoubleMa22Strategy(CtaTemplate):
         if self.last_price == 0:
             self.last_price = tick.last_price
             self.open_spread = abs(self.last_price - tick.open_price)
-            if self.last_price >= tick.open_price and self.open_spread < 18:
+            if self.last_price > tick.open_price and self.open_spread < 18:
                 self.long_entered = True
             elif self.last_price > tick.open_price and self.open_spread >= 18:
                 self.short_entered = True
-            elif self.last_price <= tick.open_price and self.open_spread < 18:
+            elif self.last_price < tick.open_price and self.open_spread < 18:
                 self.short_entered = True
             elif self.last_price < tick.open_price and self.open_spread >= 18:
                 self.long_entered = True
@@ -144,13 +144,13 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.direction=""
 
                 if self.long_entered:    #如果最新价格和 开盘第一次价格的差异3<=price_diff <=8 就开单
-                    if  price_diff in [4,5]:
+                    if  price_diff in [5,6]:
                         self.buy(tick.last_price+1, self.fixed_size)
                     elif price_diff in [-5,-6]:
                         self.buy(tick.last_price + 1, self.fixed_size)
                     self.stop_long = tick.last_price - 5
                 elif self.short_entered :
-                    if  price_diff in [-4,-5]:
+                    if  price_diff in [-5,-6]:
                         self.short(tick.last_price-1, self.fixed_size)
                     elif price_diff in [5,6]:
                         self.short(tick.last_price - 1, self.fixed_size)
