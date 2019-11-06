@@ -27,7 +27,7 @@ SETTINGS = {
 
     "database.driver": "mysql",  # see database.Driver
     "database.database": "CTP2",  # for sqlite, use this as filepath
-    "database.host": "47.98.136.216",
+    "database.host": "116.85.42.178",
     "database.port": 3306,
     "database.user": "root",
     "database.password": "wj@110120_*@mysql",
