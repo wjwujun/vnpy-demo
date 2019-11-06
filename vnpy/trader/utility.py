@@ -5,6 +5,7 @@ General utility functions.
 import json
 from pathlib import Path
 from typing import Callable
+from decimal import Decimal
 
 import numpy as np
 import talib
@@ -22,6 +23,9 @@ def extract_vt_symbol(vt_symbol: str):
 
 
 def generate_vt_symbol(symbol: str, exchange: Exchange):
+    """
+    return vt_symbol
+    """
     return f"{symbol}.{exchange.value}"
 
 
@@ -106,23 +110,25 @@ def save_json(filename: str, data: dict):
         )
 
 
-def round_to(value: float, target: float):
+def round_to(value: float, target: float) -> float:
     """
     Round price to price tick value.
     """
-    rounded = int(round(value / target)) * target
+    value = Decimal(str(value))
+    target = Decimal(str(target))
+    rounded = float(int(round(value / target)) * target)
     return rounded
 
 
 class BarGenerator:
     """
-    k线生成：
-        1. 从tick数据生成1分钟的条形数据
-        2. 从1分钟数据生成x分钟条/ x小时条数据
+    For:
+    1. generating 1 minute bar data from tick data
+    2. generateing x minute bar/x hour bar data from 1 minute data
 
-    注意:
-        1. 对于x分钟数据，x必须能够分为60：2,3,5,6,10,15,20,30
-        2. 对于x小时数据，x可以为任意数据
+    Notice:
+    1. for x minute bar, x must be able to divide 60: 2, 3, 5, 6, 10, 15, 20, 30
+    2. for x hour bar, x can be any number
     """
 
     def __init__(
@@ -156,7 +162,6 @@ class BarGenerator:
         if not tick.last_price:
             return
 
-        #新的1分钟不存在bar
         if not self.bar:
             new_minute = True
         elif self.bar.datetime.minute != tick.datetime.minute:
@@ -197,7 +202,6 @@ class BarGenerator:
     def update_bar(self, bar: BarData):
         """
         Update 1 minute bar into generator
-            更新1分钟bar到generator中
         """
         # If not inited, creaate window bar object
         if not self.window_bar:
@@ -269,11 +273,11 @@ class BarGenerator:
 class ArrayManager(object):
     """
     For:
-    1. bar数据的时间序列容器
-    2. 计算技术指标值
+    1. time series container of bar data
+    2. calculating technical indicator value
     """
 
-    def __init__(self, size=45):
+    def __init__(self, size=100):
         """Constructor"""
         self.count = 0
         self.size = size
@@ -290,7 +294,6 @@ class ArrayManager(object):
         Update new bar data into array manager.
         """
         self.count += 1
-        # print("=-==================更新am的时候inited的状态")
         if not self.inited and self.count >= self.size:
             self.inited = True
 
@@ -310,7 +313,6 @@ class ArrayManager(object):
     def open(self):
         """
         Get open price time series.
-        获取开盘价时间序列。
         """
         return self.open_array
 
@@ -318,7 +320,6 @@ class ArrayManager(object):
     def high(self):
         """
         Get high price time series.
-        获得高价时间序列。
         """
         return self.high_array
 
@@ -326,7 +327,6 @@ class ArrayManager(object):
     def low(self):
         """
         Get low price time series.
-        获得低价时间序列。
         """
         return self.low_array
 
@@ -334,7 +334,6 @@ class ArrayManager(object):
     def close(self):
         """
         Get close price time series.
-        获得收盘价时间序列。
         """
         return self.close_array
 
@@ -342,13 +341,12 @@ class ArrayManager(object):
     def volume(self):
         """
         Get trading volume time series.
-        获取交易量时间序列。
         """
         return self.volume_array
 
     def sma(self, n, array=False):
         """
-      简单移动平均线。
+        Simple moving average.
         """
         result = talib.SMA(self.close, n)
         if array:
@@ -357,7 +355,7 @@ class ArrayManager(object):
 
     def std(self, n, array=False):
         """
-      标准偏差
+        Standard deviation
         """
         result = talib.STDDEV(self.close, n)
         if array:
@@ -366,7 +364,7 @@ class ArrayManager(object):
 
     def cci(self, n, array=False):
         """
-       商品通道指数（CCI）。
+        Commodity Channel Index (CCI).
         """
         result = talib.CCI(self.high, self.low, self.close, n)
         if array:
@@ -375,7 +373,7 @@ class ArrayManager(object):
 
     def atr(self, n, array=False):
         """
-            平均真实范围（ATR）。
+        Average True Range (ATR).
         """
         result = talib.ATR(self.high, self.low, self.close, n)
         if array:
@@ -384,7 +382,7 @@ class ArrayManager(object):
 
     def rsi(self, n, array=False):
         """
-            相对强弱指数（RSI）。
+        Relative Strenght Index (RSI).
         """
         result = talib.RSI(self.close, n)
         if array:
@@ -413,7 +411,7 @@ class ArrayManager(object):
 
     def boll(self, n, dev, array=False):
         """
-            布林通道。
+        Bollinger Channel.
         """
         mid = self.sma(n, array)
         std = self.std(n, array)
@@ -425,7 +423,7 @@ class ArrayManager(object):
 
     def keltner(self, n, dev, array=False):
         """
-            凯尔特纳频道
+        Keltner Channel.
         """
         mid = self.sma(n, array)
         atr = self.atr(n, array)
@@ -437,7 +435,7 @@ class ArrayManager(object):
 
     def donchian(self, n, array=False):
         """
-       Donchian频道。
+        Donchian Channel.
         """
         up = talib.MAX(self.high, n)
         down = talib.MIN(self.low, n)
@@ -446,11 +444,21 @@ class ArrayManager(object):
             return up, down
         return up[-1], down[-1]
 
+    def aroon(self, n, array=False):
+        """
+        Aroon indicator.
+        """
+        aroon_up, aroon_down = talib.AROON(self.high, self.low, n)
+
+        if array:
+            return aroon_up, aroon_down
+        return aroon_up[-1], aroon_down[-1]
+
 
 def virtual(func: "callable"):
     """
-    将函数标记为“虚拟”，这意味着可以覆盖此函数。
-         任何基类都应该使用它或@abstractmethod来装饰所有函数
-         可以由子类（重新）实现。
+    mark a function as "virtual", which means that this function can be override.
+    any base class should use this or @abstractmethod to decorate all functions
+    that can be (re)implemented by subclasses.
     """
     return func

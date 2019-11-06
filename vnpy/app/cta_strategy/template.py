@@ -1,3 +1,4 @@
+""""""
 from abc import ABC
 from copy import copy
 from typing import Any, Callable
@@ -5,7 +6,6 @@ from typing import Any, Callable
 from vnpy.trader.constant import Interval, Direction, Offset
 from vnpy.trader.object import BarData, TickData, OrderData, TradeData
 from vnpy.trader.utility import virtual
-
 
 from .base import StopOrder, EngineType
 
@@ -32,12 +32,8 @@ class CtaTemplate(ABC):
         self.inited = False
         self.trading = False
         self.pos = 0
-        self.pnl = 0
-        self.account=0
-        self.current_price=0
-        self.direction=""
 
-        # Copy a new variables list here to avoid duplicate insert when multiple 
+        # Copy a new variables list here to avoid duplicate insert when multiple
         # strategy instances are created with the same strategy class.
         self.variables = copy(self.variables)
         self.variables.insert(0, "inited")
@@ -156,14 +152,7 @@ class CtaTemplate(ABC):
         """
         Send buy order to open a long position.
         """
-        # print("--------------策略模板中有开仓")
         return self.send_order(Direction.LONG, Offset.OPEN, price, volume, stop, lock)
-
-    def yd_sell(self, price: float, volume: float, stop: bool = False, lock: bool = False):
-        """
-        Send sell order to close a long position.
-        """
-        return self.send_order(Direction.SHORT, Offset.CLOSEYESTERDAY, price, volume, stop, lock)
 
     def sell(self, price: float, volume: float, stop: bool = False, lock: bool = False):
         """
@@ -177,24 +166,28 @@ class CtaTemplate(ABC):
         """
         return self.send_order(Direction.SHORT, Offset.OPEN, price, volume, stop, lock)
 
-    def yd_cover(self, price: float, volume: float, stop: bool = False, lock: bool = False):
-        """
-        Send cover order to close a short position.
-        """
-        return self.send_order(Direction.LONG, Offset.CLOSEYESTERDAY, price, volume, stop, lock)
-
     def cover(self, price: float, volume: float, stop: bool = False, lock: bool = False):
         """
         Send cover order to close a short position.
         """
         return self.send_order(Direction.LONG, Offset.CLOSE, price, volume, stop, lock)
 
-    #下订单
-    def send_order(self,direction: Direction,offset: Offset,price: float,volume: float,stop: bool = False,lock: bool = False):
-
-
+    def send_order(
+        self,
+        direction: Direction,
+        offset: Offset,
+        price: float,
+        volume: float,
+        stop: bool = False,
+        lock: bool = False
+    ):
+        """
+        Send a new order.
+        """
         if self.trading:
-            vt_orderids = self.cta_engine.send_order(self, direction, offset, price, volume, stop, lock)
+            vt_orderids = self.cta_engine.send_order(
+                self, direction, offset, price, volume, stop, lock
+            )
             return vt_orderids
         else:
             return []
@@ -209,7 +202,6 @@ class CtaTemplate(ABC):
     def cancel_all(self):
         """
         Cancel all orders sent by strategy.
-        取消策略发送的所有订单。
         """
         if self.trading:
             self.cta_engine.cancel_all(self)
@@ -233,7 +225,7 @@ class CtaTemplate(ABC):
         callback: Callable = None,
     ):
         """
-            加载历史条bar据以初始化策略。
+        Load historical bar data for initializing strategy.
         """
         if not callback:
             callback = self.on_bar

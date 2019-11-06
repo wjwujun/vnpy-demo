@@ -9,7 +9,7 @@ from datetime import datetime
 from email.message import EmailMessage
 from queue import Empty, Queue
 from threading import Thread
-from typing import Any, Sequence
+from typing import Any, Sequence, Type
 
 from vnpy.event import Event, EventEngine
 from .app import BaseApp
@@ -32,7 +32,7 @@ from .object import (
 )
 from .setting import SETTINGS
 from .utility import get_folder_path, TRADER_DIR
-from vnpy.trader.database import database_manager
+
 
 class MainEngine:
     """
@@ -63,7 +63,7 @@ class MainEngine:
         self.engines[engine.engine_name] = engine
         return engine
 
-    def add_gateway(self, gateway_class: BaseGateway):
+    def add_gateway(self, gateway_class: Type[BaseGateway]):
         """
         Add gateway.
         """
@@ -77,7 +77,7 @@ class MainEngine:
 
         return gateway
 
-    def add_app(self, app_class: BaseApp):
+    def add_app(self, app_class: Type[BaseApp]):
         """
         Add app.
         """
@@ -293,7 +293,7 @@ class LogEngine(BaseEngine):
 
     def add_file_handler(self):
         """
-        Add file output of log. 
+        Add file output of log.
         """
         today_date = datetime.now().strftime("%Y%m%d")
         filename = f"vt_{today_date}.log"
@@ -323,6 +323,7 @@ class OmsEngine(BaseEngine):
     """
     Provides order management system function for VN Trader.
     """
+
     def __init__(self, main_engine: MainEngine, event_engine: EventEngine):
         """"""
         super(OmsEngine, self).__init__(main_engine, event_engine, "oms")
@@ -387,28 +388,19 @@ class OmsEngine(BaseEngine):
         self.trades[trade.vt_tradeid] = trade
 
     def process_position_event(self, event: Event):
+        """"""
         position = event.data
-        #保存持仓信息
-        #database_manager.save_position_data([position])
         self.positions[position.vt_positionid] = position
 
     def process_account_event(self, event: Event):
+        """"""
         account = event.data
-        #保存账户信息
-        #database_manager.save_account_data([account])
         self.accounts[account.vt_accountid] = account
 
     def process_contract_event(self, event: Event):
-        """
-
-        """
+        """"""
         contract = event.data
         self.contracts[contract.vt_symbol] = contract
-        # if(len(self.contracts)<10):
-        #     print("++++++++++++++++++++++++++++++++++++++++++++++++++合约信息")
-        #     print(len(self.contracts))
-        #    print(self.contracts)
-
 
     def get_tick(self, vt_symbol):
         """
@@ -442,11 +434,8 @@ class OmsEngine(BaseEngine):
 
     def get_contract(self, vt_symbol):
         """
-            获取相关合约详情
+        Get contract data by vt_symbol.
         """
-        # print("-------------------------合约的相关信息")
-        # print(vt_symbol)
-        # print(self.contracts)
         return self.contracts.get(vt_symbol, None)
 
     def get_all_ticks(self):

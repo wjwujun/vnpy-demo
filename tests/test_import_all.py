@@ -1,6 +1,18 @@
 # flake8: noqa
 import platform
 import unittest
+from os import environ
+
+
+def check_env(key: str, default=None):
+    return environ.get(key, default)
+
+
+def skip_if_module_not_built(env_key: str):
+    return unittest.skipIf(
+        check_env(key=env_key) == '0',
+        f"Skip because of {env_key}==0",
+    )
 
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
@@ -29,10 +41,12 @@ class GatewayImportTest(unittest.TestCase):
         from vnpy.gateway.bitmex import BitmexGateway
 
     @unittest.skipIf(platform.system() == "Darwin", "Not supported yet under osx")
+    @skip_if_module_not_built(env_key="VNPY_BUILD_CTP")
     def test_import_ctp(self):
         from vnpy.gateway.ctp import CtpGateway
 
     @unittest.skipIf(platform.system() == "Darwin", "Not supported yet under osx")
+    @unittest.skipIf(platform.system() == "Linux", "Not supported yet under Linux")
     def test_import_ctptest(self):
         from vnpy.gateway.ctptest import CtptestGateway
 
@@ -54,6 +68,7 @@ class GatewayImportTest(unittest.TestCase):
         from vnpy.gateway.ib import IbGateway
 
     @unittest.skipIf(platform.system() == "Darwin", "Not supported yet under osx")
+    @skip_if_module_not_built(env_key="VNPY_BUILD_OES")
     def test_import_oes(self):
         from vnpy.gateway.oes import OesGateway
 
@@ -75,9 +90,12 @@ class GatewayImportTest(unittest.TestCase):
         from vnpy.gateway.tiger import TigerGateway
 
     @unittest.skipIf(platform.system() == "Darwin", "Not supported yet under osx")
+    @unittest.skipIf(platform.system() == "Linux", "Not supported yet under Linux")
     def test_import_tora(self):
         from vnpy.gateway.tora import ToraGateway
 
+    @unittest.skipIf(platform.system() == "Linux", "Not supported yet under Linux")
+    @unittest.skipIf(platform.system() == "Darwin", "Not supported yet under osx")
     def test_import_xtp(self):
         from vnpy.gateway.xtp import XtpGateway
 

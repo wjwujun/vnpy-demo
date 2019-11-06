@@ -100,6 +100,8 @@ class Exchange(Enum):
     HKFE = "HKFE"           # Hong Kong Futures Exchange
     SGX = "SGX"             # Singapore Global Exchange
     CBOT = "CBT"            # Chicago Board of Trade
+    CBOE = "CBOE"           # Chicago Board Options Exchange
+    CFE = "CFE"             # CBOE Futures Exchange
     DME = "DME"             # Dubai Mercantile Exchange
     EUREX = "EUX"           # Eurex Exchange
     APEX = "APEX"           # Asia Pacific Exchange
@@ -115,6 +117,10 @@ class Exchange(Enum):
     HUOBI = "HUOBI"
     BITFINEX = "BITFINEX"
     BINANCE = "BINANCE"
+    COINBASE = "COINBASE"
+
+    # Special Function
+    LOCAL = "LOCAL"         # For local generated data
 
 
 class Currency(Enum):
@@ -128,10 +134,9 @@ class Currency(Enum):
 
 class Interval(Enum):
     """
-        k线生成，时间控制
+    Interval of bar data.
     """
     MINUTE = "1m"
-    MINUTE5 = "5m"
     HOUR = "1h"
     DAILY = "d"
     WEEKLY = "w"

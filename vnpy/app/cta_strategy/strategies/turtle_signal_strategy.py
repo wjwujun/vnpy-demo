@@ -10,33 +10,28 @@ from vnpy.app.cta_strategy import (
     ArrayManager,
 )
 
-"""
-单标的海龟交易策略，实现了完整海龟策略中的信号部分。
-"""
+
 class TurtleSignalStrategy(CtaTemplate):
     """"""
     author = "用Python的交易员"
 
-    # 策略参数
-    entry_window = 20           # 入场通道窗口
-    exit_window = 10            # 出场通道窗口
-    atr_window = 20             # 计算ATR波动率的窗口
-    fixed_size = 1              # 每次交易的数量
-    # 策略变量
-    entry_up = 0                # 入场通道上轨
-    entry_down = 0              # 入场通道下轨
-    exit_up = 0                 # 出场通道上轨
-    exit_down = 0               # 出场通道下轨
-    atr_value = 0               # ATR波动率
+    entry_window = 20
+    exit_window = 10
+    atr_window = 20
+    fixed_size = 1
 
-    long_entry = 0              # 多头入场价格
-    short_entry = 0             # 空头入场价格
-    long_stop = 0               # 多头止损价格
-    short_stop = 0              # 空头止损价格
+    entry_up = 0
+    entry_down = 0
+    exit_up = 0
+    exit_down = 0
+    atr_value = 0
 
-    # 参数列表，保存了参数的名称
+    long_entry = 0
+    short_entry = 0
+    long_stop = 0
+    short_stop = 0
+
     parameters = ["entry_window", "exit_window", "atr_window", "fixed_size"]
-    # 变量列表，保存了变量的名称
     variables = ["entry_up", "entry_down", "exit_up", "exit_down", "atr_value"]
 
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
@@ -76,20 +71,21 @@ class TurtleSignalStrategy(CtaTemplate):
     def on_bar(self, bar: BarData):
         """
         Callback of new bar data update.
-           收到Bar推送的回调
         """
         self.cancel_all()
 
-        # 保存K线数据
         self.am.update_bar(bar)
         if not self.am.inited:
             return
 
-        # 计算指标数值
-        self.entry_up, self.entry_down = self.am.donchian(self.entry_window)
+        # Only calculates new entry channel when no position holding
+        if not self.pos:
+            self.entry_up, self.entry_down = self.am.donchian(
+                self.entry_window
+            )
+
         self.exit_up, self.exit_down = self.am.donchian(self.exit_window)
 
-        # 判断是否要进行交易
         if not self.pos:
             self.atr_value = self.am.atr(self.atr_window)
 
@@ -101,26 +97,22 @@ class TurtleSignalStrategy(CtaTemplate):
             self.send_buy_orders(self.entry_up)
             self.send_short_orders(self.entry_down)
         elif self.pos > 0:
-            # 加仓逻辑
-            self.send_buy_orders(self.long_entry)
+            self.send_buy_orders(self.entry_up)
 
-            # 止损逻辑
             sell_price = max(self.long_stop, self.exit_down)
             self.sell(sell_price, abs(self.pos), True)
 
         elif self.pos < 0:
-            # 加仓逻辑
-            self.send_short_orders(self.short_entry)
-            # 止损逻辑
+            self.send_short_orders(self.entry_down)
+
             cover_price = min(self.short_stop, self.exit_up)
             self.cover(cover_price, abs(self.pos), True)
-        # 发出状态更新事件
+
         self.put_event()
 
     def on_trade(self, trade: TradeData):
         """
         Callback of new trade data update.
-                成交推送
         """
         if trade.direction == Direction.LONG:
             self.long_entry = trade.price
@@ -142,8 +134,7 @@ class TurtleSignalStrategy(CtaTemplate):
         pass
 
     def send_buy_orders(self, price):
-        """发出一系列的买入停止单"""
-
+        """"""
         t = self.pos / self.fixed_size
 
         if t < 1:
@@ -159,7 +150,7 @@ class TurtleSignalStrategy(CtaTemplate):
             self.buy(price + self.atr_value * 1.5, self.fixed_size, True)
 
     def send_short_orders(self, price):
-        """发出一系列的卖出停止单"""
+        """"""
         t = self.pos / self.fixed_size
 
         if t > -1:

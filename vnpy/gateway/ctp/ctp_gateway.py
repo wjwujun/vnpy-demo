@@ -452,7 +452,7 @@ class CtpTdApi(TdApi):
             exchange=exchange,
             orderid=orderid,
             direction=DIRECTION_CTP2VT[data["Direction"]],
-            offset=OFFSET_CTP2VT[data["CombOffsetFlag"]],
+            offset=OFFSET_CTP2VT.get(data["CombOffsetFlag"], Offset.NONE),
             price=data["LimitPrice"],
             volume=data["VolumeTotalOriginal"],
             status=Status.REJECTED,
@@ -476,7 +476,7 @@ class CtpTdApi(TdApi):
         Callback of settlment info confimation.
         """
         self.gateway.write_log("结算信息确认成功")
-        
+
         self.reqid += 1
         self.reqQryInstrument({}, self.reqid)
     
@@ -576,7 +576,7 @@ class CtpTdApi(TdApi):
                 pricetick=data["PriceTick"],
                 gateway_name=self.gateway_name
             )
-            
+
             # For option only
             if contract.product == Product.OPTION:
                 contract.option_underlying = data["UnderlyingInstrID"],
@@ -663,12 +663,12 @@ class CtpTdApi(TdApi):
         self.gateway.on_trade(trade)        
     
     def connect(
-        self, 
-        address: str, 
-        userid: str, 
-        password: str, 
-        brokerid: int, 
-        auth_code: str, 
+        self,
+        address: str,
+        userid: str,
+        password: str,
+        brokerid: int,
+        auth_code: str,
         appid: str,
         product_info
     ):
@@ -738,8 +738,14 @@ class CtpTdApi(TdApi):
         Send new order.
         """
         self.order_ref += 1
+
+        if req.offset not in OFFSET_VT2CTP:
+            self.gateway.write_log("请选择开平方向")
+            return ""
+
         ctp_req = {
             "InstrumentID": req.symbol,
+            "ExchangeID": req.exchange.value,
             "LimitPrice": req.price,
             "VolumeTotalOriginal": int(req.volume),
             "OrderPriceType": ORDERTYPE_VT2CTP.get(req.type, ""),
@@ -755,8 +761,7 @@ class CtpTdApi(TdApi):
             "IsAutoSuspend": 0,
             "TimeCondition": THOST_FTDC_TC_GFD,
             "VolumeCondition": THOST_FTDC_VC_AV,
-            "MinVolume": 1,
-            "ExchangeID":req.exchange.value
+            "MinVolume": 1
         }
         
         if req.type == OrderType.FAK:
@@ -785,14 +790,13 @@ class CtpTdApi(TdApi):
         
         ctp_req = {
             "InstrumentID": req.symbol,
-            "Exchange": req.exchange,
+            "ExchangeID": req.exchange.value,
             "OrderRef": order_ref,
             "FrontID": int(frontid),
             "SessionID": int(sessionid),
             "ActionFlag": THOST_FTDC_AF_Delete,
             "BrokerID": self.brokerid,
-            "InvestorID": self.userid,
-            "ExchangeID": req.exchange.value
+            "InvestorID": self.userid
         }
         
         self.reqid += 1

@@ -9,22 +9,18 @@ from vnpy.app.cta_strategy import (
     BarGenerator,
     ArrayManager,
 )
-"""
-DualThrust交易策略
-"""
+
 
 class DualThrustStrategy(CtaTemplate):
     """"""
 
     author = "用Python的交易员"
 
-    # 策略参数
     fixed_size = 1
     k1 = 0.4
     k2 = 0.6
 
-    # 策略变量
-    bars = []    # K线对象的列表
+    bars = []
 
     day_open = 0
     day_high = 0
@@ -38,10 +34,7 @@ class DualThrustStrategy(CtaTemplate):
     long_entered = False
     short_entered = False
 
-    # 参数列表，保存了参数的名称
     parameters = ["k1", "k2", "fixed_size"]
-
-    # 变量列表，保存了变量的名称
     variables = ["range", "long_entry", "short_entry", "exit_time"]
 
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
@@ -58,7 +51,6 @@ class DualThrustStrategy(CtaTemplate):
         """
         Callback when strategy is inited.
         """
-        # 载入历史数据，并采用回放计算的方式初始化策略数值
         self.write_log("策略初始化")
         self.load_bar(10)
 
@@ -84,19 +76,16 @@ class DualThrustStrategy(CtaTemplate):
         """
         Callback of new bar data update.
         """
-        # 撤销之前发出的尚未成交的委托（包括限价单和停止单）
         self.cancel_all()
 
-        # 计算指标数值
         self.bars.append(bar)
         if len(self.bars) <= 2:
             return
         else:
             self.bars.pop(0)
         last_bar = self.bars[-2]
-        # 新的一天
+
         if last_bar.datetime.date() != bar.datetime.date():
-            # 如果已经初始化
             if self.day_high:
                 self.range = self.day_high - self.day_low
                 self.long_entry = bar.open_price + self.k1 * self.range
@@ -111,7 +100,7 @@ class DualThrustStrategy(CtaTemplate):
         else:
             self.day_high = max(self.day_high, bar.high_price)
             self.day_low = min(self.day_low, bar.low_price)
-        # 尚未到收盘
+
         if not self.range:
             return
 
@@ -124,29 +113,29 @@ class DualThrustStrategy(CtaTemplate):
                     if not self.short_entered:
                         self.short(self.short_entry,
                                    self.fixed_size, stop=True)
-            # 持有多头仓位
+
             elif self.pos > 0:
                 self.long_entered = True
-                # 多头止损单
+
                 self.sell(self.short_entry, self.fixed_size, stop=True)
-                # 空头开仓单
+
                 if not self.short_entered:
                     self.short(self.short_entry, self.fixed_size, stop=True)
-            # 持有空头仓位
+
             elif self.pos < 0:
                 self.short_entered = True
-                # 空头止损单
+
                 self.cover(self.long_entry, self.fixed_size, stop=True)
-                # 多头开仓单
+
                 if not self.long_entered:
                     self.buy(self.long_entry, self.fixed_size, stop=True)
-        # 收盘平仓
+
         else:
             if self.pos > 0:
                 self.sell(bar.close_price * 0.99, abs(self.pos))
             elif self.pos < 0:
                 self.cover(bar.close_price * 1.01, abs(self.pos))
-        # 发出状态更新事件
+
         self.put_event()
 
     def on_order(self, order: OrderData):

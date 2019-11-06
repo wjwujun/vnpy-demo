@@ -3,6 +3,7 @@
 from threading import Thread
 from queue import Queue, Empty
 from copy import copy
+
 from vnpy.event import Event, EventEngine
 from vnpy.trader.engine import BaseEngine, MainEngine
 from vnpy.trader.object import (
@@ -58,25 +59,18 @@ class RecorderEngine(BaseEngine):
         save_json(self.setting_filename, setting)
 
     def run(self):
-        """
-            数据引擎开始处理，保存数据进入数据库
-        """
+        """"""
         while self.active:
             try:
                 task = self.queue.get(timeout=1)
                 task_type, data = task
-                #print("--------------------")
-                #print(task)
-                #print(data.symbol)
+
                 if task_type == "tick":
-                    self.write_log("tick----插入数据库")
                     database_manager.save_tick_data([data])
                 elif task_type == "bar":
-                    self.write_log("bar===插入数据库")
                     database_manager.save_bar_data([data])
 
             except Empty:
-                self.write_log("tick----插入mysql错误")
                 continue
 
     def close(self):
@@ -162,41 +156,27 @@ class RecorderEngine(BaseEngine):
         self.write_log(f"移除Tick记录成功：{vt_symbol}")
 
     def register_event(self):
-        """
-            注册，事件处理函数
-        """
+        """"""
         self.event_engine.register(EVENT_TICK, self.process_tick_event)
         self.event_engine.register(EVENT_CONTRACT, self.process_contract_event)
 
     def process_tick_event(self, event: Event):
-        """
-            数据处理函数
-        """
+        """"""
         tick = event.data
-        print("11111111111111111111===========")
-        print(tick)
-        #处理tick数据
+
         if tick.vt_symbol in self.tick_recordings:
-             self.record_tick(tick)
-        #处理k线数据
+            self.record_tick(tick)
+
         if tick.vt_symbol in self.bar_recordings:
             bg = self.get_bar_generator(tick.vt_symbol)
             bg.update_tick(tick)
 
     def process_contract_event(self, event: Event):
-        """
-            保存合约到本地,订阅相关的行情
-        """
+        """"""
         contract = event.data
-        #print("合约订阅的时候使用的方法---------------")
-        #print(contract)
         vt_symbol = contract.vt_symbol
-        #print(vt_symbol)
 
-        #self.add_tick_recording(vt_symbol)       #添加tick合约信息到本地
-        #self.add_bar_recording(vt_symbol)        #添加bar合约信息到本地配置
         if (vt_symbol in self.tick_recordings or vt_symbol in self.bar_recordings):
-            #print(vt_symbol)
             self.subscribe(contract)
 
     def write_log(self, msg: str):
@@ -229,32 +209,20 @@ class RecorderEngine(BaseEngine):
     def record_tick(self, tick: TickData):
         """"""
         task = ("tick", copy(tick))
-        print("2222222222222222222222------------")
-        print(task)
         self.queue.put(task)
 
     def record_bar(self, bar: BarData):
         """"""
         task = ("bar", copy(bar))
-        print("33333333333333333333333------------")
-        print(task)
         self.queue.put(task)
 
-    #生成k线
     def get_bar_generator(self, vt_symbol: str):
-        #查看有没有相应的要生的合约的bar对象
+        """"""
         bg = self.bar_generators.get(vt_symbol, None)
-        # print("1111111111111")
-        # print(vt_symbol)
-        # print(bg)
-        # 如果没有就生成一个新对象，每次重启的时候都要生成对象
+
         if not bg:
-            #print("33333333333333")
             bg = BarGenerator(self.record_bar)
             self.bar_generators[vt_symbol] = bg
-
-        #print("==========")
-        #print(bg)
 
         return bg
 
@@ -264,6 +232,4 @@ class RecorderEngine(BaseEngine):
             symbol=contract.symbol,
             exchange=contract.exchange
         )
-        #print("行情记录里面的订阅=======")
-        #print(req)
         self.main_engine.subscribe(req, contract.gateway_name)

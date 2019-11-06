@@ -30,7 +30,6 @@ def init(driver: Driver, settings: dict):
     assert driver in init_funcs
 
     db = init_funcs[driver](settings)
-    # 调用init_models函数生成model类,将model类添加到db中,然后将两张表返回（DbTickData和DBBarData,将这两张表（类）添加到SqlManager中，生成统一的BaseDatabaseManager
     bar, tick,account,position = init_models(db, driver)
     return SqlManager(bar, tick,account,position)
 
@@ -42,7 +41,6 @@ def init_sqlite(settings: dict):
     return db
 
 
-#peewee数据库链接配置
 def init_mysql(settings: dict):
     keys = {"database", "user", "password", "host", "port"}
     settings = {k: v for k, v in settings.items() if k in keys}
@@ -64,10 +62,8 @@ class ModelBase(Model):
 
 
 def init_models(db: Database, driver: Driver):
-    #bar数据类
     class DbBarData(ModelBase):
         """
-            定义k线表结构和字段
         """
 
         id = AutoField()
@@ -86,14 +82,14 @@ def init_models(db: Database, driver: Driver):
 
         class Meta:
             database = db
-            #制定书库中的索引
+            #�ƶ�����е�����
             indexes = ((("symbol", "exchange", "interval", "datetime"), True),)
 
         @staticmethod
         def from_bar(bar: BarData):
             """
                 Generate DbBarData object from BarData.
-                給db赋值
+                �odb��ֵ
             """
             db_bar = DbBarData()
 
@@ -155,10 +151,10 @@ def init_models(db: Database, driver: Driver):
                             c).on_conflict_replace().execute()
 
 
-    #tick数据类
+    #tick������
     class DbTickData(ModelBase):
         """
-            定义tick数据结构表字段
+            ����tick���ݽṹ���ֶ�
         """
 
         id = AutoField()
@@ -326,10 +322,8 @@ def init_models(db: Database, driver: Driver):
                         DbTickData.insert_many(c).on_conflict_replace().execute()
 
 
-    #账户数据类
     class DbAccountData(ModelBase):
         """
-            定义账户数据结构表字段
         """
 
         id = AutoField()
@@ -389,10 +383,10 @@ def init_models(db: Database, driver: Driver):
                 for c in chunked(dicts, 50):
                     DbAccountData.insert_many(c).on_conflict_replace().execute()
 
-    #持仓数据类
+    #�ֲ�������
     class DbPositionData(ModelBase):
         """
-            定义持仓数据
+            ����ֲ�����
         """
 
         id = AutoField()
@@ -456,7 +450,7 @@ def init_models(db: Database, driver: Driver):
                     DbPositionData.insert_many(c).on_conflict_replace().execute()
 
     db.connect()
-    #创建表
+    #������
     db.create_tables([DbBarData, DbTickData,DbAccountData,DbPositionData])
     return DbBarData, DbTickData,DbAccountData,DbPositionData
 
@@ -501,22 +495,22 @@ class SqlManager(BaseDatabaseManager):
         data = [db_tick.to_tick() for db_tick in s]
         return data
 
-    # 保存bar数据
+    # ����bar����
     def save_bar_data(self, datas: Sequence[BarData]):
         ds = [self.class_bar.from_bar(i) for i in datas]
         self.class_bar.save_all(ds)
 
-    #保存tick数据
+    #����tick����
     def save_tick_data(self, datas: Sequence[TickData]):
         ds = [self.class_tick.from_tick(i) for i in datas]
         self.class_tick.save_all(ds)
-        # 完整写法
+        # ����д��
         # for i in datas:
         #     ds = self.class_tick.from_tick(i)
         #     self.class_tick.save_all(ds)
 
 
-    #保存账户相关数据
+    #�����˻��������
     def save_account_data(self,datas:Sequence[AccountData]):
         ds = [self.class_account.from_account(i) for i in datas]
         self.class_account.save_all(ds)
@@ -524,7 +518,7 @@ class SqlManager(BaseDatabaseManager):
 
 
 
-    #持有相关信息保存进数据库
+    #���������Ϣ��������ݿ�
     def save_position_data(self,datas:Sequence[PositionData]):
         ds = [self.class_position.from_position(i) for i in datas]
         self.class_position.save_all(ds)
