@@ -59,14 +59,14 @@ class DoubleMa22Strategy(CtaTemplate):
         self.bg = BarGenerator(self.on_bar)
         # 时间序列容器：计算技术指标用
         self.am = ArrayManager()
-        print("20191106************************************************444")
+        print("20191106*************************************************444")
 
     def on_init(self):
         """
         Callback when strategy is inited.
         """
         self.write_log("策略初始化")
-        self.load_bar(2)       #初始化加载3天的数据
+        self.load_bar(5)  # 初始化加载3天的数据
 
 
     def on_start(self):
@@ -88,7 +88,7 @@ class DoubleMa22Strategy(CtaTemplate):
         """
         Callback of new tick data update.
         """
-
+        self.bg.update_tick(tick)
         print("余额:(%s),盈亏：(%s),当前：(%s),均价：(%s),开盘：(%s),下单：(%s),方向：(%s),"
               "多止损：(%s),空止损：(%s),多次数(%s),空次数(%s),仓位(%s)"%(
             self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.ma_value,tick.open_price,self.current_price,
@@ -213,8 +213,10 @@ class DoubleMa22Strategy(CtaTemplate):
         """
         Callback of new bar data update.
         """
-        self.bg.update_bar(bar)
         self.cancel_all()
+        self.am.update_bar(bar)
+        if not self.am.inited:
+            return
         self.ma_value = self.am.sma(20)
 
 
