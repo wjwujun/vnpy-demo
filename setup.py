@@ -146,32 +146,16 @@ def get_ext_modules():
         depends=[],
         language="cpp",
     )
-    vnoes = Extension(
-        name="vnpy.api.oes.vnoes",
-        sources=gather_autocxxpy_generated_files(
-            "vnpy/api/oes/vnoes/generated_files/",
-        ),
-        include_dirs=["vnpy/api/oes/vnoes/include",
-                      "vnpy/api/oes/vnoes/include/oes", ],
-        define_macros=[("BRIGAND_NO_BOOST_SUPPORT", "1")],
-        undef_macros=[],
-        library_dirs=["vnpy/api/oes/vnoes/libs"],
-        libraries=["oes_api"],
-        extra_compile_args=compiler_flags,
-        extra_link_args=extra_link_args,
-        runtime_library_dirs=runtime_library_dirs,
-        depends=[],
-        language="cpp",
-    )
+
     if platform.system() == "Windows":
         # use pre-built pyd for windows ( support python 3.7 only )
         ext_modules = []
     elif platform.system() == "Darwin":
         ext_modules = []
     else:
-        ext_modules = [vnctptd, vnctpmd, vnoes]
+        ext_modules = [vnctptd, vnctpmd]
 
-    ext_modules = check_extension_build_flag(ext_modules, "VNPY_BUILD_OES", vnoes)
+
     ext_modules = check_extension_build_flag(ext_modules, "VNPY_BUILD_CTP", vnctptd)
     ext_modules = check_extension_build_flag(ext_modules, "VNPY_BUILD_CTP", vnctpmd)
 
