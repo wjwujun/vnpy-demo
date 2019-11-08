@@ -43,13 +43,14 @@ class DoubleMa22Strategy(CtaTemplate):
     short_time = 0  # 空次数
 
     open_price = 0      #开盘价
+    first_price = 0      #第一次价格
     stop_price=0        #下单价和最新价格之差
     open_spread=0       #开仓价之差
     current_price = 0   #下单价
     direction = ""      #下单方向
 
     # 参数列表，保存了参数的名称
-    parameters = ['fixed_size','open_count']
+    #parameters = ['fixed_size','open_count']
 
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
         """"""
@@ -90,25 +91,28 @@ class DoubleMa22Strategy(CtaTemplate):
         Callback of new tick data update.
         """
         self.bg.update_tick(tick)
-
+        if self.open_price==0:
+            self.open_price=tick.open_price
+            self.first_price=tick.last_price
         print("余额:(%s),盈亏：(%s),当前：(%s),均价：(%s),开盘：(%s),下单：(%s),方向：(%s),"
               "多止损：(%s),空止损：(%s),多次数(%s),空次数(%s),仓位(%s)"%(
             self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.ma_value,tick.open_price,self.current_price,
             self.direction,self.stop_long,self.stop_short,self.long_time,
             self.short_time,self.pos))
         self.get_price(tick)      #获取止损价格
+
         if self.day_start_time < tick.datetime.time() < self.day_close_exit_time:  # 白盘
             self.day_trade(tick)
         if self.night_start_time < tick.datetime.time() < self.night_close_exit_time:  # 夜盘
             self.night_trade(tick)
+
 
     #白盘
     def day_trade(self,tick: TickData):
         #交易时间段
         if self.day_start_time < tick.datetime.time() < self.day_exit_time:
             # 当前无仓位
-            if self.pos == 0 and self.pos < self.fixed_size and (
-                    self.long_time < self.open_count or self.short_time < self.open_count):
+            if self.pos == 0 and self.pos < self.fixed_size and self.long_time == self.short_time and self.long_time < self.open_count :
                 # 清空停止数据
                 self.arr_long = []
                 self.arr_short = []
@@ -116,7 +120,6 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.stop_long = 0
                 self.current_price = 0
                 self.direction = ""
-
                 if tick.last_price > self.ma_value and tick.last_price > self.open_price:  # 均线上，开盘价上，多
                     self.buy(tick.last_price + 1, self.fixed_size)
                     self.stop_long = tick.last_price - 5
@@ -142,7 +145,7 @@ class DoubleMa22Strategy(CtaTemplate):
         #交易时间段
         if self.night_start_time < tick.datetime.time() < self.night_exit_time:
             # 当前无仓位
-            if self.pos == 0 and self.pos < self.fixed_size and (self.long_time < self.open_count or self.short_time < self.open_count):
+            if self.pos == 0 and self.pos < self.fixed_size and self.long_time == self.short_time and self.long_time < self.open_count:
                 # 清空停止数据
                 self.arr_long = []
                 self.arr_short = []
