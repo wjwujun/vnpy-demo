@@ -49,7 +49,7 @@ class DoubleMa22Strategy(CtaTemplate):
     direction = ""      #下单方向
 
     # 参数列表，保存了参数的名称
-    parameters = ['fixed_size','open_count']
+    #parameters = ['fixed_size','open_count']
 
     def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
         """"""
@@ -89,6 +89,9 @@ class DoubleMa22Strategy(CtaTemplate):
         Callback of new tick data update.
         """
         self.bg.update_tick(tick)
+        if self.open_price==0:
+            self.open_price=tick.open_price
+            self.first_price=tick.last_price
         print("余额:(%s),盈亏：(%s),当前：(%s),均价：(%s),开盘：(%s),下单：(%s),方向：(%s),"
               "多止损：(%s),空止损：(%s),多次数(%s),空次数(%s),仓位(%s)"%(
             self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.ma_value,tick.open_price,self.current_price,
@@ -108,8 +111,7 @@ class DoubleMa22Strategy(CtaTemplate):
         #交易时间段
         if self.day_start_time < tick.datetime.time() < self.day_exit_time:
             # 当前无仓位
-            if self.pos == 0 and self.pos < self.fixed_size and (
-                    self.long_time < self.open_count or self.short_time < self.open_count):
+            if self.pos == 0 and self.pos < self.fixed_size and self.long_time == self.short_time and self.long_time < self.open_count:
                 # 清空停止数据
                 self.arr_long = []
                 self.arr_short = []
@@ -143,7 +145,7 @@ class DoubleMa22Strategy(CtaTemplate):
         #交易时间段
         if self.night_start_time < tick.datetime.time() < self.night_exit_time:
             # 当前无仓位
-            if self.pos == 0 and self.pos < self.fixed_size and (self.long_time < self.open_count or self.short_time < self.open_count):
+            if self.pos == 0 and self.pos < self.fixed_size and self.long_time == self.short_time and self.long_time < self.open_count:
                 # 清空停止数据
                 self.arr_long = []
                 self.arr_short = []
