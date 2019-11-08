@@ -163,8 +163,8 @@ class CtaEngine(BaseEngine):
     #接收到tick数据后的处理方法,
     def process_tick_event(self, event: Event):
         tick = event.data
-        if tick.datetime.strftime("%H:%M:%S") <= "15:10:00" and tick.datetime.strftime("%H:%M:%S") >= "08:59:50":
-            database_manager.save_tick_data([tick])
+        #if tick.datetime.strftime("%H:%M:%S") <= "15:10:00" and tick.datetime.strftime("%H:%M:%S") >= "08:59:50":
+        database_manager.save_tick_data([tick])
         self.bg.update_tick(tick)
         self.tick=tick
         strategies = self.symbol_strategy_map[tick.vt_symbol]
