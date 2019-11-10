@@ -219,7 +219,7 @@ class DoubleMa22Strategy(CtaTemplate):
         if not self.am.inited:
             return
         self.ma_value = self.am.sma(20)
-        if self.day_start_time < bar.datetime.time() < self.day_exit_time:
+        if (self.day_start_time < bar.datetime.time() < self.day_exit_time) or (self.night_start_time < bar.datetime.time() < self.night_exit_time):
             # 当前无仓位
             if self.pos == 0 and self.pos < self.fixed_size and self.long_time == self.short_time and self.long_time < self.open_count :
                 # 清空停止数据
@@ -231,10 +231,10 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.direction = ""
                 if bar.close_price > self.ma_value and bar.close_price > self.open_price:  # 均线上，开盘价上，多
                     self.buy(bar.close_price + 1, self.fixed_size)
-                    self.stop_long = bar.close_price - 5
+                    self.stop_long = bar.close_price - 6
                 if bar.close_price < self.ma_value and bar.close_price < self.open_price:  # 均线下，开盘价下，空
                     self.short(bar.close_price - 1, self.fixed_size)
-                    self.stop_short = bar.close_price + 5
+                    self.stop_short = bar.close_price + 6
 
 
 
