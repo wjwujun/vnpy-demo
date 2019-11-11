@@ -21,8 +21,8 @@ class DoubleMa22Strategy(CtaTemplate):
     author = "wj"
 
     # 策略变量
-    fixed_size = 1      # 开仓数量
-    open_count = 2      # 每次开次数
+    fixed_size = 10      # 开仓数量
+    open_count = 10      # 每次开次数
     ma_value = 0        #20min avgrage
     day_start_time = time(hour=8, minute=58)        #白
     day_exit_time = time(hour=14, minute=55)        #白
@@ -94,9 +94,9 @@ class DoubleMa22Strategy(CtaTemplate):
         if self.open_price==0:
             self.open_price=tick.open_price
             self.first_price=tick.last_price
-        print("余额:(%s),盈亏：(%s),当前：(%s),均价：(%s),开盘：(%s),下单：(%s),方向：(%s),"
+        print("余额:(%s),盈亏：(%s),当前：(%s),均价：(%s),一次价(%s),开盘：(%s),下单：(%s),方向：(%s),"
               "多止损：(%s),空止损：(%s),多次数(%s),空次数(%s),仓位(%s)"%(
-            self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.ma_value,tick.open_price,self.current_price,
+            self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.ma_value,self.first_price,tick.open_price,self.current_price,
             self.direction,self.stop_long,self.stop_short,self.long_time,
             self.short_time,self.pos))
         self.get_price(tick)      #获取止损价格
