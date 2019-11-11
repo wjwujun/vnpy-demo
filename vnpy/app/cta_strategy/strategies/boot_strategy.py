@@ -92,9 +92,9 @@ class DoubleMa22Strategy(CtaTemplate):
         if self.open_price==0:
             self.open_price=tick.open_price
             self.first_price=tick.last_price
-        print("余额:(%s),盈亏：(%s),当前：(%s),均价：(%s),开盘：(%s),下单：(%s),方向：(%s),"
+        print("余额:(%s),盈亏：(%s),当前：(%s),均价：(%s),一次价(%s),开盘：(%s),下单：(%s),方向：(%s),"
               "多止损：(%s),空止损：(%s),多次数(%s),空次数(%s),仓位(%s)"%(
-            self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.ma_value,tick.open_price,self.current_price,
+            self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.ma_value,self.first_price,tick.open_price,self.current_price,
             self.direction,self.stop_long,self.stop_short,self.long_time,
             self.short_time,self.pos))
 
