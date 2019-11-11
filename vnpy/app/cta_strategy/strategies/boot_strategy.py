@@ -26,7 +26,7 @@ class DoubleMa22Strategy(CtaTemplate):
     ma_value = 0        #20min avgrage
     day_start_time = time(hour=8, minute=58)        #白
     day_exit_time = time(hour=14, minute=55)        #白
-    day_close_exit_time = time(hour=15, minute=59)        #白
+    day_close_exit_time = time(hour=14, minute=59)        #白
 
     night_start_time = time(hour=20, minute=58) #夜
     night_exit_time = time(hour=22, minute=55)  #夜
@@ -61,7 +61,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.am = ArrayManager()
         #bar生成
         self.bg = BarGenerator(self.on_bar)
-        print("20191106************************************************444")
+        print("20191111************************************************444")
 
     def on_init(self):
         """
@@ -132,8 +132,7 @@ class DoubleMa22Strategy(CtaTemplate):
             elif self.pos < 0:  # 空头止损单
                 if tick.last_price >= self.stop_short:
                     self.cover(self.stop_short, abs(self.pos))
-        #收盘
-        if self.day_exit_time < tick.datetime.time() < self.day_close_exit_time:
+        else:      #收盘
             if self.pos > 0:
                 self.sell(tick.last_price - 1, abs(self.pos))
             elif self.pos < 0:
@@ -165,8 +164,7 @@ class DoubleMa22Strategy(CtaTemplate):
             elif self.pos < 0:  # 空头止损单
                 if tick.last_price >= self.stop_short:
                     self.cover(self.stop_short, abs(self.pos))
-        #收盘
-        if self.night_exit_time < tick.datetime.time() < self.night_close_exit_time :
+        else:   #收盘
             if self.pos > 0:
                 self.sell(tick.last_price - 1, abs(self.pos))
             elif self.pos < 0:
@@ -229,10 +227,10 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.stop_long = 0
                 self.current_price = 0
                 self.direction = ""
-                if bar.close_price > self.ma_value and bar.close_price > self.open_price:  # 均线上，开盘价上，多
+                if bar.close_price > self.ma_value and self.first_price > self.open_price and bar.close_price > self.open_price:  # 均线上，开盘价上，多
                     self.buy(bar.close_price + 1, self.fixed_size)
                     self.stop_long = bar.close_price - 6
-                if bar.close_price < self.ma_value and bar.close_price < self.open_price:  # 均线下，开盘价下，空
+                if bar.close_price < self.ma_value and self.first_price < self.open_price  and bar.close_price < self.open_price:  # 均线下，开盘价下，空
                     self.short(bar.close_price - 1, self.fixed_size)
                     self.stop_short = bar.close_price + 6
 
