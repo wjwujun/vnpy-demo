@@ -21,7 +21,7 @@ class DoubleMa22Strategy(CtaTemplate):
 
     # 策略变量
     fixed_size = 10      # 开仓数量
-    open_count = 10      # 每次开次数
+    open_count = 7      # 每次开次数
     ma_value = 0        #20min avgrage
     day_start_time = time(hour=8, minute=58)        #白
     day_exit_time = time(hour=14, minute=55)        #白
@@ -52,6 +52,8 @@ class DoubleMa22Strategy(CtaTemplate):
     current_price = 0   #下单价
     direction = ""      #下单方向
     up = 0
+
+    entered = False
     # 参数列表，保存了参数的名称
     #parameters = ['fixed_size','open_count']
 
@@ -105,8 +107,9 @@ class DoubleMa22Strategy(CtaTemplate):
             self.short_time,self.pos))
 
         self.get_price(tick)      #获取止损价格
-
         if self.pos == 0 and self.long_time == self.short_time and self.long_time < self.open_count:
+            self.entered=True
+        if self.entered:
             self.arr_long = []
             self.arr_short = []
             self.stop_short = 0
@@ -173,8 +176,28 @@ class DoubleMa22Strategy(CtaTemplate):
     def cover_sell_pos(self,tick: TickData):
         if self.pos > 0 and tick.last_price <= self.stop_long:    # 多头止损单
             self.sell(self.stop_long, abs(self.pos))
+            if self.entered:
+                self.arr_long = []
+                self.arr_short = []
+                self.stop_short = 0
+                self.stop_long = 0
+                self.current_price = 0
+                self.direction = ""
+                self.buy(self.stop_long, self.fixed_size)
+                self.stop_long = self.stop_long - 6
+
         if self.pos < 0 and tick.last_price >= self.stop_short: # 空头止损单
             self.cover(self.stop_short, abs(self.pos))
+            if self.entered:
+                self.arr_long = []
+                self.arr_short = []
+                self.stop_short = 0
+                self.stop_long = 0
+                self.current_price = 0
+                self.direction = ""
+                self.short(self.stop_short, self.fixed_size)
+                self.stop_short = self.stop_short + 6
+
         if self.day_exit_time < tick.datetime.time() < self.day_close_exit_time:   #白盘收仓
             self.end_trade(tick)
         if self.night_exit_time < tick.datetime.time() < self.night_close_exit_time:  #夜盘收仓:
@@ -214,7 +237,6 @@ class DoubleMa22Strategy(CtaTemplate):
         #             self.short(bar.close_price - 1, self.fixed_size)
         #             self.stop_short = bar.close_price + 6
         #
-
 
 
 
