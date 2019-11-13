@@ -101,7 +101,6 @@ class CtaEngine(BaseEngine):
         self.offset_converter = OffsetConverter(self.main_engine)
 
         ####################################
-        self.bg = BarGenerator(self.on_bar)
         self.balance_now=0.0
         self.account= 0.0
         self.pnl= 0.0
@@ -120,9 +119,6 @@ class CtaEngine(BaseEngine):
     def close(self):
         """"""
         self.stop_all_strategies()
-
-    def on_bar(self, bar: BarData):
-        database_manager.save_bar_data([bar])
 
     def register_event(self):
         """"""
@@ -167,10 +163,6 @@ class CtaEngine(BaseEngine):
     def process_tick_event(self, event: Event):
         """"""
         tick = event.data
-        #保存tick数据
-        #if tick.datetime.strftime("%H:%M:%S") <= "15:10:00" and tick.datetime.strftime("%H:%M:%S") >= "08:59:50":
-        database_manager.save_tick_data([tick])
-        self.bg.update_tick(tick)
         strategies = self.symbol_strategy_map[tick.vt_symbol]
         if not strategies:
             return
