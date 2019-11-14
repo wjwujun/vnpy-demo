@@ -23,17 +23,10 @@ class DoubleMa22Strategy(CtaTemplate):
     fixed_size = 10      # 开仓数量
     open_count = 7      # 每次开次数
     ma_value = 0        #20min avgrage
-    day_start_time = time(hour=8, minute=58)        #白
-    day_exit_time = time(hour=14, minute=55)        #白
-    day_close_exit_time = time(hour=14, minute=59)        #白
-
-    night_start_time = time(hour=20, minute=58) #夜
-    night_exit_time = time(hour=22, minute=55)  #夜
-    night_close_exit_time = time(hour=22, minute=59)#夜
-    time_arrs_open=[time(hour=9, minute=00),time(hour=13, minute=30),
-                    time(hour=21, minute=00)]
-    time_arrs=[time(hour=10, minute=00),time(hour=11, minute=00),
-               time(hour=14, minute=00),time(hour=22, minute=00)]
+    day_start_time = time(hour=8, minute=58)
+    day_exit_time = time(hour=14, minute=55)
+    time_arrs_open=[time(hour=9, minute=00),time(hour=13, minute=30)]
+    time_arrs=[time(hour=10, minute=00),time(hour=11, minute=00),time(hour=14, minute=00)]
 
 
 
@@ -47,13 +40,17 @@ class DoubleMa22Strategy(CtaTemplate):
     short_time = 0  # 空次数
 
     open_price = 0      #开盘价
+    first_price = 0
     stop_price=0        #下单价和最新价格之差
     open_spread=0       #开仓价之差
     current_price = 0   #下单价
     direction = ""      #下单方向
+    today_direction=""  #今日方向
     up = 0
 
     entered = False
+    reverse = 0
+
     # 参数列表，保存了参数的名称
     #parameters = ['fixed_size','open_count']
 
@@ -67,6 +64,10 @@ class DoubleMa22Strategy(CtaTemplate):
         #bar生成
         self.bg = BarGenerator(self.on_bar)
         self.up = random.randint(0, 1)
+        if self.up==1:
+            self.today_direction="多"
+        else:
+            self.today_direction = "空"
         print("20191113************************************************444")
 
     def on_init(self):
@@ -98,40 +99,26 @@ class DoubleMa22Strategy(CtaTemplate):
         self.bg.update_tick(tick)
         if self.open_price!=tick.open_price:
             self.open_price=tick.open_price
-
-
-        print("余额:(%s),盈亏：(%s),当前：(%s),开盘：(%s),下单：(%s),方向：(%s),"
+            self.first_price=tick.last_price
+        print("(%s),反(%s),余额:(%s),盈亏：(%s),当前：(%s),first：(%s),开盘：(%s),下单：(%s),方向：(%s),"
               "多止损：(%s),空止损：(%s),多次数(%s),空次数(%s),仓位(%s)"%(
-            self.cta_engine.account,self.cta_engine.pnl,tick.last_price,tick.open_price,
-            self.current_price,self.direction,self.stop_long,self.stop_short,self.long_time,
-            self.short_time,self.pos))
+            self.today_direction,self.reverse,self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.first_price,
+            tick.open_price,self.current_price,self.direction,self.stop_long,self.stop_short,self.long_time,self.short_time,
+            self.pos))
 
         self.get_price(tick)      #获取止损价格
         if self.pos == 0 and self.long_time == self.short_time and self.long_time < self.open_count:
             self.entered=True
         if self.entered:
-            self.arr_long = []
-            self.arr_short = []
-            self.stop_short = 0
-            self.stop_long = 0
-            self.current_price = 0
-            self.direction = ""
             if tick.datetime.time() in self.time_arrs:     #整点
                 self.cancel_all()  # 取消所有未成交本地单
+                self.init_data()
                 if self.up == 1:
                     self.buy(tick.last_price + 1, self.fixed_size)
                     self.stop_long = tick.last_price - 6
                 else:
                     self.short(tick.last_price - 1, self.fixed_size)
                     self.stop_short = tick.last_price + 6
-            if tick.datetime.time() in self.time_arrs_open:     #开盘
-                self.cancel_all()  # 取消所有未成交本地单
-                if self.up == 1:
-                    self.buy(tick.open_price + 1, self.fixed_size,True)
-                    self.stop_long = tick.open_price - 6
-                else:
-                    self.short(tick.open_price - 1, self.fixed_size,True)
-                    self.stop_short = tick.open_price + 6
         #平仓
         self.cover_sell_pos(tick)
 
@@ -174,33 +161,25 @@ class DoubleMa22Strategy(CtaTemplate):
                             self.arr_short.append(i)
 
     def cover_sell_pos(self,tick: TickData):
-        if self.pos > 0 and tick.last_price <= self.stop_long:    # 多头止损单
+        if self.pos > 0 and tick.last_price <= self.stop_long and self.stop_long!=0:    # 多头止损单
             self.sell(self.stop_long, abs(self.pos))
-            if self.entered:
-                self.arr_long = []
-                self.arr_short = []
-                self.stop_short = 0
-                self.stop_long = 0
-                self.current_price = 0
-                self.direction = ""
+            if self.entered and self.cta_engine.pnl<0 and  self.reverse<2: #反转
+                self.reverse+=1
+                self.cancel_all()  # 取消所有未成交本地单
+                self.init_data()
                 self.buy(self.stop_long, self.fixed_size)
                 self.stop_long = self.stop_long - 6
 
-        if self.pos < 0 and tick.last_price >= self.stop_short: # 空头止损单
+        if self.pos < 0 and tick.last_price >= self.stop_short and self.stop_short!=0: # 空头止损单
             self.cover(self.stop_short, abs(self.pos))
-            if self.entered:
-                self.arr_long = []
-                self.arr_short = []
-                self.stop_short = 0
-                self.stop_long = 0
-                self.current_price = 0
-                self.direction = ""
+            if self.entered and  self.cta_engine.pnl<0 and self.reverse<2: #反转
+                self.reverse += 1
+                self.cancel_all()  # 取消所有未成交本地单
+                self.init_data()
                 self.short(self.stop_short, self.fixed_size)
                 self.stop_short = self.stop_short + 6
 
-        if self.day_exit_time < tick.datetime.time() < self.day_close_exit_time:   #白盘收仓
-            self.end_trade(tick)
-        if self.night_exit_time < tick.datetime.time() < self.night_close_exit_time:  #夜盘收仓:
+        if tick.datetime.time() > self.day_exit_time:   #白盘收仓
             self.end_trade(tick)
 
     def end_trade(self,tick: TickData):
@@ -208,6 +187,10 @@ class DoubleMa22Strategy(CtaTemplate):
             self.sell(tick.last_price - 1, abs(self.pos))
         if self.pos < 0:
             self.cover(tick.last_price + 1, abs(self.pos))
+    def init_data(self):
+        self.arr_long = []
+        self.arr_short = []
+
 
     def on_bar(self, bar: BarData):
         """
@@ -219,24 +202,8 @@ class DoubleMa22Strategy(CtaTemplate):
         database_manager.save_bar_data([bar])
         if not self.am.inited:
             return
-        self.ma_value = self.am.sma(20)
-        # if (self.day_start_time < bar.datetime.time() < self.day_exit_time) or (self.night_start_time < bar.datetime.time() < self.night_exit_time):
-        #     # 当前无仓位
-        #     if self.pos == 0 and self.pos < self.fixed_size and self.long_time == self.short_time and self.long_time < self.open_count :
-        #         # 清空停止数据
-        #         self.arr_long = []
-        #         self.arr_short = []
-        #         self.stop_short = 0
-        #         self.stop_long = 0
-        #         self.current_price = 0
-        #         self.direction = ""
-        #         if bar.close_price > self.ma_value and self.first_price > self.open_price and bar.close_price > self.open_price:  # 均线上，开盘价上，多
-        #             self.buy(bar.close_price + 1, self.fixed_size)
-        #             self.stop_long = bar.close_price - 6
-        #         if bar.close_price < self.ma_value and self.first_price < self.open_price  and bar.close_price < self.open_price:  # 均线下，开盘价下，空
-        #             self.short(bar.close_price - 1, self.fixed_size)
-        #             self.stop_short = bar.close_price + 6
-        #
+        #self.ma_value = self.am.sma(20)
+
 
 
 
@@ -267,10 +234,10 @@ class DoubleMa22Strategy(CtaTemplate):
             成交后初始止损价格
         """
         if trade.direction == Direction.LONG:
-            self.stop_long=trade.price - 5
+            self.stop_long=trade.price - 6
             self.long_time += 1
         else:
-            self.stop_short = trade.price + 5
+            self.stop_short = trade.price + 6
             self.short_time += 1
         self.current_price = trade.price
         self.direction = trade.direction
