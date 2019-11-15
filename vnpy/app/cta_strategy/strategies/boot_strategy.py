@@ -26,9 +26,19 @@ class DoubleMa22Strategy(CtaTemplate):
     day_start_time = time(hour=8, minute=58)
     day_exit_time = time(hour=14, minute=55)
     time_arrs_open=[time(hour=9, minute=00),time(hour=13, minute=30)]
-    time_arrs=[time(hour=10, minute=00),
+    time_arrs=[
+               time(hour=9, minute=10),time(hour=9, minute=20),
+               time(hour=9, minute=30),time(hour=9, minute=40),
+               time(hour=9, minute=50),
+               time(hour=10, minute=00),time(hour=10, minute=10),
                time(hour=10, minute=40),time(hour=10, minute=50),
-               time(hour=11, minute=00),time(hour=14, minute=00)]
+               time(hour=14, minute=10),time(hour=14, minute=20),
+               time(hour=14, minute=20),time(hour=14, minute=30),
+               time(hour=14, minute=30),time(hour=14, minute=40),
+               time(hour=14, minute=40),time(hour=14, minute=50),
+               time(hour=10, minute=00),
+               time(hour=11, minute=00),
+               time(hour=14, minute=00)]
 
 
 
@@ -51,8 +61,7 @@ class DoubleMa22Strategy(CtaTemplate):
     up = 0
 
     entered = True
-    buy_reverse = 0
-    short_reverse = 0
+    reverse = 0
 
     # 参数列表，保存了参数的名称
     #parameters = ['fixed_size','open_count']
@@ -114,17 +123,13 @@ class DoubleMa22Strategy(CtaTemplate):
         if self.pos == 0 and self.long_time == self.short_time and self.long_time < self.open_count:
             if tick.datetime.time() in self.time_arrs:     #整点
                 print("12121212121212121212121212121212121212121222整点")
-                self.cancel_all()  # 取消所有未成交本地单
                 self.init_data()
                 if self.up == 1:
                     self.buy(tick.last_price + 1, self.fixed_size)
-                    self.stop_long = tick.last_price - 6
                 else:
                     self.short(tick.last_price - 1, self.fixed_size)
-                    self.stop_short = tick.last_price + 6
-
-        #平仓
-        self.cover_sell_pos(tick)
+        else:
+            self.cover_sell_pos(tick)
 
         #保存tick数据
         database_manager.save_tick_data([tick])
@@ -164,27 +169,19 @@ class DoubleMa22Strategy(CtaTemplate):
                             self.arr_short.append(i)
 
     def cover_sell_pos(self,tick: TickData):
-        if tick.datetime.time() < self.day_exit_time:   #白盘收仓
+        if tick.datetime.time() < self.day_exit_time:
             if self.pos > 0 and tick.last_price <= self.stop_long and self.stop_long != 0:  # 多头止
                 self.sell(self.stop_long, abs(self.pos))
-                if self.cta_engine.pnl < 0 and self.buy_reverse == 0:  # 反转
-                    print("0000000000000000000000000000000空反转")
-                    self.buy_reverse += 1
-                    self.cancel_all()  # 取消所有未成交本地单
-                    self.init_data()
-                    self.buy(self.stop_long, self.fixed_size)
-                    self.stop_long = self.stop_long - 6
-
+                if self.cta_engine.pnl < 0 and self.reverse == 0:  # 反转
+                    self.reverse += 1
+                    self.short(tick.last_price - 1, self.fixed_size)
             if self.pos < 0 and tick.last_price >= self.stop_short and self.stop_short != 0:  # 空头止
                 self.cover(self.stop_short, abs(self.pos))
-                if self.cta_engine.pnl < 0 and self.short_reverse == 0:  # 反转
-                    print("0000000000000000000000000000000多反转")
-                    self.short_reverse += 1
-                    self.cancel_all()  # 取消所有未成交本地单
-                    self.init_data()
-                    self.short(self.stop_short, self.fixed_size)
-                    self.stop_short = self.stop_short + 6
+                if self.cta_engine.pnl < 0 and self.reverse == 0:  # 反转
+                    self.reverse += 1
+                    self.buy(tick.last_price + 1, self.fixed_size)
         else:
+            # 白盘收仓
             self.end_trade(tick)
 
     def end_trade(self,tick: TickData):
@@ -195,13 +192,14 @@ class DoubleMa22Strategy(CtaTemplate):
     def init_data(self):
         self.arr_long = []
         self.arr_short = []
-
+        self.stop_long = 0
+        self.stop_short = 0
 
     def on_bar(self, bar: BarData):
         """
         Callback of new bar data update.
         """
-        #self.cancel_all()  # 取消所有未成交本地单
+        self.cancel_all()  # 取消所有未成交本地单
         self.am.update_bar(bar)
         #保存bar数据
         database_manager.save_bar_data([bar])
@@ -238,6 +236,7 @@ class DoubleMa22Strategy(CtaTemplate):
         """
             成交后初始止损价格
         """
+        self.init_data()
         if trade.direction == Direction.LONG:
             self.stop_long=trade.price - 6
             self.long_time += 1
