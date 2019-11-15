@@ -189,22 +189,18 @@ class DoubleMa22Strategy(CtaTemplate):
             self.sell(tick.last_price - 1, abs(self.pos))
         if self.pos < 0:
             self.cover(tick.last_price + 1, abs(self.pos))
-    def init_data(self):
-        self.arr_long = []
-        self.arr_short = []
-        self.stop_long = 0
-        self.stop_short = 0
+
 
     def on_bar(self, bar: BarData):
         """
         Callback of new bar data update.
         """
         self.cancel_all()  # 取消所有未成交本地单
-        self.am.update_bar(bar)
+        #self.am.update_bar(bar)
         #保存bar数据
         database_manager.save_bar_data([bar])
-        if not self.am.inited:
-            return
+        # if not self.am.inited:
+        #     return
         #self.ma_value = self.am.sma(20)
 
 
@@ -246,7 +242,11 @@ class DoubleMa22Strategy(CtaTemplate):
         self.current_price = trade.price
         self.direction = trade.direction
 
-
+    def init_data(self):
+        self.arr_long = []
+        self.arr_short = []
+        self.stop_long = 0
+        self.stop_short = 0
 
     def on_stop_order(self, stop_order: StopOrder):
         """
