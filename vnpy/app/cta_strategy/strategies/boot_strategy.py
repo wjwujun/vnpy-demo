@@ -26,19 +26,7 @@ class DoubleMa22Strategy(CtaTemplate):
     day_start_time = time(hour=8, minute=58)
     day_exit_time = time(hour=14, minute=55)
     time_arrs_open=[time(hour=9, minute=00),time(hour=13, minute=30)]
-    time_arrs=[
-               time(hour=9, minute=10),time(hour=9, minute=20),
-               time(hour=9, minute=30),time(hour=9, minute=40),
-               time(hour=9, minute=50),
-               time(hour=10, minute=00),time(hour=10, minute=10),
-               time(hour=10, minute=40),time(hour=10, minute=50),
-               time(hour=14, minute=10),time(hour=14, minute=20),
-               time(hour=14, minute=20),time(hour=14, minute=30),
-               time(hour=14, minute=30),time(hour=14, minute=40),
-               time(hour=14, minute=40),time(hour=14, minute=50),
-               time(hour=10, minute=00),
-               time(hour=11, minute=00),
-               time(hour=14, minute=00)]
+    time_arrs=[time(hour=10, minute=00),time(hour=11, minute=00),time(hour=14, minute=00)]
 
 
 
@@ -118,11 +106,11 @@ class DoubleMa22Strategy(CtaTemplate):
             tick.open_price,self.current_price,self.direction,self.stop_long,self.stop_short,self.long_time,self.short_time,
             self.pos))
 
+
         self.get_price(tick)      #获取止损价格
 
         if self.pos == 0 and self.long_time == self.short_time and self.long_time < self.open_count:
-            if tick.datetime.time() in self.time_arrs:     #整点
-                print("12121212121212121212121212121212121212121222整点")
+            if tick.datetime.time().replace(microsecond=0) in self.time_arrs:     #整点
                 self.init_data()
                 if self.up == 1:
                     self.buy(tick.last_price + 1, self.fixed_size)
@@ -169,7 +157,7 @@ class DoubleMa22Strategy(CtaTemplate):
                             self.arr_short.append(i)
 
     def cover_sell_pos(self,tick: TickData):
-        if tick.datetime.time() < self.day_exit_time:
+        if tick.datetime.time().replace(microsecond=0) < self.day_exit_time:
             if self.pos > 0 and tick.last_price <= self.stop_long and self.stop_long != 0:  # 多头止
                 self.sell(self.stop_long, abs(self.pos))
                 if self.cta_engine.pnl < 0 and self.reverse == 0:  # 反转
