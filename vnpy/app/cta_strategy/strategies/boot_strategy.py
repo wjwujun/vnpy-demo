@@ -45,12 +45,12 @@ class DoubleMa22Strategy(CtaTemplate):
     open_spread=0       #开仓价之差
     current_price = 0   #下单价
     direction = ""      #下单方向
-    today_direction=""  #今日方向
     up = 0
-
+    str="rb2001.SHFE"      #合约
     entered = True
     reverse = 0
-
+    long_pos=0
+    short_pos=0
     # 参数列表，保存了参数的名称
     #parameters = ['fixed_size','open_count']
 
@@ -64,10 +64,6 @@ class DoubleMa22Strategy(CtaTemplate):
         #bar生成
         self.bg = BarGenerator(self.on_bar)
         self.up = random.randint(0, 1)
-        if self.up==1:
-            self.today_direction="多"
-        else:
-            self.today_direction = "空"
         print("20191113************************************************444")
 
     def on_init(self):
@@ -102,14 +98,16 @@ class DoubleMa22Strategy(CtaTemplate):
             self.first_price=tick.last_price
         print("(%s),反(%s),balance:(%s),pnl：(%s),latest：(%s),first：(%s),open：(%s),"
               "order：(%s),direction：(%s),long_stop：(%s),short_stop：(%s),long(%s),short(%s),pos(%s)"%(
-            self.today_direction,self.reverse,self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.first_price,
+            self.up,self.reverse,self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.first_price,
             tick.open_price,self.current_price,self.direction,self.stop_long,self.stop_short,self.long_time,self.short_time,
             self.pos))
+        self.long_pos=self.cta_engine.offset_converter.get_position_holding(self.str).long_pos
+        self.short_pos=self.cta_engine.offset_converter.get_position_holding(self.str).short_pos
 
 
         self.get_price(tick)      #获取止损价格
 
-        if self.pos == 0 and self.long_time == self.short_time and self.long_time < self.open_count:
+        if self.long_pos ==self.short_pos and self.long_time == self.short_time and self.long_time < self.open_count:
             if tick.datetime.time().replace(microsecond=0) in self.time_arrs:     #整点
                 self.init_data()
                 if self.up == 1:
@@ -158,14 +156,15 @@ class DoubleMa22Strategy(CtaTemplate):
 
     def cover_sell_pos(self,tick: TickData):
         if tick.datetime.time().replace(microsecond=0) < self.day_exit_time:
-            if self.pos > 0 and tick.last_price <= self.stop_long and self.stop_long != 0:  # 多头止
-                self.sell(self.stop_long, abs(self.pos))
-                if self.cta_engine.pnl < 0 and self.reverse == 0:  # 反转
+            if self.long_pos != 0 and tick.last_price <= self.stop_long and self.stop_long != 0:  # 多头止
+                self.sell(self.stop_long, abs(self.long_pos))
+
+                if self.stop_price > 0  and self.short_pos==0 and self.reverse == 0:  # 反转
                     self.reverse += 1
                     self.short(tick.last_price - 1, self.fixed_size)
-            if self.pos < 0 and tick.last_price >= self.stop_short and self.stop_short != 0:  # 空头止
-                self.cover(self.stop_short, abs(self.pos))
-                if self.cta_engine.pnl < 0 and self.reverse == 0:  # 反转
+            if self.short_pos != 0 and tick.last_price >= self.stop_short and self.stop_short != 0:  # 空头止
+                self.cover(self.stop_short, abs( self.short_pos))
+                if self.stop_price < 0 and self.long_pos==0 and self.reverse == 0:  # 反转
                     self.reverse += 1
                     self.buy(tick.last_price + 1, self.fixed_size)
         else:
