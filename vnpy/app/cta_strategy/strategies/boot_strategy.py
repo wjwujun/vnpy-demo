@@ -101,8 +101,9 @@ class DoubleMa22Strategy(CtaTemplate):
             self.up,self.reverse,self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.first_price,
             tick.open_price,self.current_price,self.direction,self.stop_long,self.stop_short,self.long_time,self.short_time,
             self.pos))
-        self.long_pos=self.cta_engine.offset_converter.get_position_holding(self.str).long_pos
-        self.short_pos=self.cta_engine.offset_converter.get_position_holding(self.str).short_pos
+        holding=self.cta_engine.offset_converter.get_position_holding(self.str)
+        self.long_pos=holding.long_pos
+        self.short_pos=holding.short_pos
 
 
         self.get_price(tick)      #获取止损价格
