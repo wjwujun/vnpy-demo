@@ -26,7 +26,22 @@ class DoubleMa22Strategy(CtaTemplate):
     day_start_time = time(hour=8, minute=58)
     day_exit_time = time(hour=14, minute=55)
     time_arrs_open=[time(hour=9, minute=00),time(hour=13, minute=30)]
-    time_arrs=[time(hour=10, minute=00),time(hour=11, minute=00),time(hour=14, minute=00)]
+    time_arrs=[time(hour=10, minute=00),
+               time(hour=9, minute=40),
+               time(hour=9, minute=50),
+               time(hour=10, minute=10),
+               time(hour=10, minute=40),
+               time(hour=10, minute=50),
+               time(hour=11, minute=00),
+               time(hour=11, minute=10),
+               time(hour=11, minute=20),
+               time(hour=13, minute=55),
+               time(hour=14, minute=00),
+               time(hour=14, minute=10),
+               time(hour=14, minute=20),
+               time(hour=14, minute=30),
+               time(hour=14, minute=40),
+               time(hour=14, minute=50)]
 
 
 
@@ -108,7 +123,7 @@ class DoubleMa22Strategy(CtaTemplate):
 
         self.get_price(tick)      #获取止损价格
 
-        if self.long_pos ==self.short_pos and self.long_time == self.short_time and self.long_time < self.open_count:
+        if self.pos == 0 and self.long_time == self.short_time and self.long_time < self.open_count:
             if tick.datetime.time().replace(microsecond=0) in self.time_arrs:     #整点
                 self.init_data()
                 if self.up == 1:
@@ -161,11 +176,19 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.sell(self.stop_long, abs(self.long_pos))
 
                 if self.stop_price > 0  and self.short_pos==0 and self.reverse == 0:  # 反转
+                    print("------------")
+                    print(self.stop_price)
+                    print(self.short_pos)
+                    print(self.reverse)
                     self.reverse += 1
                     self.short(tick.last_price - 1, self.fixed_size)
             if self.short_pos != 0 and tick.last_price >= self.stop_short and self.stop_short != 0:  # 空头止
                 self.cover(self.stop_short, abs( self.short_pos))
                 if self.stop_price < 0 and self.long_pos==0 and self.reverse == 0:  # 反转
+                    print("===================")
+                    print(self.stop_price)
+                    print(self.short_pos)
+                    print(self.reverse)
                     self.reverse += 1
                     self.buy(tick.last_price + 1, self.fixed_size)
         else:
