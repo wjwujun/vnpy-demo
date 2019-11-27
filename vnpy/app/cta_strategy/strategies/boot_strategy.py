@@ -169,7 +169,7 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.sell(self.stop_long, abs(self.long_pos))
 
                 if self.stop_price > 0  and self.short_pos==0 and self.reverse < 3 :  # 反转
-                    print("------------")
+                    print("------------1")
                     print(self.stop_price)
                     print(self.short_pos)
                     print(self.reverse)
