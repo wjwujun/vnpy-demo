@@ -33,7 +33,7 @@ class DoubleMa22Strategy(CtaTemplate):
 
 
     close_price=[4,7,10,15,20,25,30,35,40,45,50,60,70,80,90,100,125,200,250,300,350,400,450,500]  #止盈等级，根据等级来确定止盈的价格
-    close_price_two=[4,7,10]
+    close_price_two = [4, 5, 5, 7, 10]
     arr_long = []   # 确定止盈的范围
     arr_short = []  # 确定止盈的范围
     stop_long = 0   # 多头止损
@@ -146,13 +146,13 @@ class DoubleMa22Strategy(CtaTemplate):
                     if self.stop_price >= 10:
                         self.sell(tick.last_price - 1, abs(self.pos))  # 亏损超过10点，立马平仓
                     else:
-                        self.stop_long = max(self.current_price - 6, self.stop_long)  # 亏损止损价
+                        self.stop_long = max(self.current_price - 5, self.stop_long)  # 亏损止损价
             else:
                 if self.stop_price < 0:  # 亏损
                     if self.stop_price <= -10:
                         self.cover(tick.last_price + 1, abs(self.pos))  # 亏损超过10点，立马平仓
                     else:
-                        self.stop_short = min(self.current_price + 6, self.stop_short)  # 亏损止损价
+                        self.stop_short = min(self.current_price + 5, self.stop_short)  # 亏损止损价
                 else:  # 盈利
                     for i in self.close_price:
                         if self.stop_price >= i and (i not in self.arr_short):
@@ -168,7 +168,7 @@ class DoubleMa22Strategy(CtaTemplate):
             if self.long_pos != 0 and tick.last_price <= self.stop_long and self.stop_long != 0:  # 多头止
                 self.sell(self.stop_long, abs(self.long_pos))
 
-                if self.stop_price > 0  and self.short_pos==0 and self.reverse == 0:  # 反转
+                if self.stop_price > 0  and self.short_pos==0 and self.reverse < 3 :  # 反转
                     print("------------")
                     print(self.stop_price)
                     print(self.short_pos)
@@ -177,7 +177,7 @@ class DoubleMa22Strategy(CtaTemplate):
                     self.short(tick.last_price - 1, self.fixed_size)
             if self.short_pos != 0 and tick.last_price >= self.stop_short and self.stop_short != 0:  # 空头止
                 self.cover(self.stop_short, abs( self.short_pos))
-                if self.stop_price < 0 and self.long_pos==0 and self.reverse == 0:  # 反转
+                if self.stop_price < 0 and self.long_pos==0 and self.reverse < 3:  # 反转
                     print("===================")
                     print(self.stop_price)
                     print(self.short_pos)
@@ -239,10 +239,10 @@ class DoubleMa22Strategy(CtaTemplate):
         self.entered = True
         self.init_data()
         if trade.direction == Direction.LONG:
-            self.stop_long=trade.price - 6
+            self.stop_long=trade.price - 5
             self.long_time += 1
         else:
-            self.stop_short = trade.price + 6
+            self.stop_short = trade.price + 5
             self.short_time += 1
         self.current_price = trade.price
         self.direction = trade.direction
