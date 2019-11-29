@@ -65,6 +65,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.am = ArrayManager()
         #bar生成
         self.bg = BarGenerator(self.on_bar)
+        self.up = random.randint(0, 1)
         print("20191113************************************************444")
 
     def on_init(self):
@@ -97,13 +98,6 @@ class DoubleMa22Strategy(CtaTemplate):
         if self.open_price!=tick.open_price:
             self.open_price=tick.open_price
             self.first_price=tick.last_price
-            if self.first_price >self.open_price:
-                self.up=1
-                self.buy(tick.last_price + 1, self.fixed_size)
-            else:
-                self.up=0
-                self.short(tick.last_price - 1, self.fixed_size)
-
         print("(%s),反(%s),balance:(%s),pnl：(%s),latest：(%s),first：(%s),open：(%s),"
               "order：(%s),direction：(%s),long_stop：(%s),short_stop：(%s),long(%s),short(%s),pos(%s)"%(
             self.up,self.reverse,self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.first_price,
