@@ -65,7 +65,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.am = ArrayManager()
         #bar生成
         self.bg = BarGenerator(self.on_bar)
-        self.up = random.randint(0, 1)
+        #self.up = random.randint(0, 1)
         print("20191113************************************************444")
 
     def on_init(self):
@@ -115,9 +115,11 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.cancel_all()  # 取消所有未成交本地单
                 self.entered = False
                 self.init_data()
-                if self.up == 1:
+                if tick.last_price>self.open_price:
+                    self.up = 1
                     self.buy(tick.last_price + 1, self.fixed_size)
                 else:
+                    self.up = 0
                     self.short(tick.last_price - 1, self.fixed_size)
         else:
             self.cover_sell_pos(tick)
@@ -164,7 +166,7 @@ class DoubleMa22Strategy(CtaTemplate):
             if self.long_pos != 0 and tick.last_price <= self.stop_long and self.stop_long != 0:  # 多头止
                 self.sell(self.stop_long, abs(self.long_pos))
 
-                if self.stop_price > 0  and self.short_pos==0 and self.reverse < 3 :  # 反转
+                if self.stop_price > 0 and self.up==1 and self.short_pos==0 and self.reverse < 3 :  # 反转
                     print("------------1")
                     print(self.stop_price)
                     print(self.short_pos)
@@ -173,7 +175,7 @@ class DoubleMa22Strategy(CtaTemplate):
                     self.short(tick.last_price - 1, self.fixed_size)
             if self.short_pos != 0 and tick.last_price >= self.stop_short and self.stop_short != 0:  # 空头止
                 self.cover(self.stop_short, abs( self.short_pos))
-                if self.stop_price < 0 and self.long_pos==0 and self.reverse < 3:  # 反转
+                if self.stop_price < 0 and self.up==0 and self.long_pos==0 and self.reverse < 3:  # 反转
                     print("===================")
                     print(self.stop_price)
                     print(self.short_pos)
