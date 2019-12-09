@@ -48,7 +48,7 @@ class DoubleMa22Strategy(CtaTemplate):
     current_price = 0   #下单价
     direction = ""      #下单方向
     up = 0
-    str="rb2001.SHFE"      #合约
+    str_vt_symbol=""      #合约
     entered = True
     reverse = 0
     long_pos=0
@@ -60,12 +60,14 @@ class DoubleMa22Strategy(CtaTemplate):
         """"""
         super(DoubleMa22Strategy, self).__init__(cta_engine, strategy_name, vt_symbol, setting)
 
+
         #self.bg = BarGenerator(self.on_bar,5,self.on_5min_bar)
         # 时间序列容器：计算技术指标用
         self.am = ArrayManager()
         #bar生成
         self.bg = BarGenerator(self.on_bar)
         self.up = random.randint(0, 1)
+        self.str_vt_symbol = vt_symbol
         print("20191113************************************************444")
 
     def on_init(self):
@@ -103,7 +105,7 @@ class DoubleMa22Strategy(CtaTemplate):
             self.up,self.reverse,self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.first_price,
             tick.open_price,self.current_price,self.direction,self.stop_long,self.stop_short,self.long_time,self.short_time,
             self.pos))
-        holding=self.cta_engine.offset_converter.get_position_holding(self.str)
+        holding=self.cta_engine.offset_converter.get_position_holding(self.str_vt_symbol)
         self.long_pos=holding.long_pos
         self.short_pos=holding.short_pos
 
@@ -217,6 +219,8 @@ class DoubleMa22Strategy(CtaTemplate):
 
         # Calculator the 5min moving average
         #self.ma_value = self.am.sma(5)
+
+
 
 
 
