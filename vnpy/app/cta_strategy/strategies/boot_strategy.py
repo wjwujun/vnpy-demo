@@ -26,8 +26,7 @@ class DoubleMa22Strategy(CtaTemplate):
     day_start_time = time(hour=8, minute=58)
     day_exit_time = time(hour=14, minute=55)
     time_arrs_open=[time(hour=9, minute=00),time(hour=13, minute=30)]
-    time_arrs=[time(hour=10, minute=00),
-               time(hour=11, minute=00)]
+    time_arrs=[time(hour=10, minute=00),time(hour=11, minute=00)]
 
 
 
@@ -100,9 +99,9 @@ class DoubleMa22Strategy(CtaTemplate):
         if self.open_price!=tick.open_price:
             self.open_price=tick.open_price
             self.first_price=tick.last_price
-        print("(%s),反(%s),balance:(%s),pnl：(%s),latest：(%s),first：(%s),open：(%s),"
+        print("(%s),多反(%s),空反(%s),balance:(%s),pnl：(%s),latest：(%s),first：(%s),open：(%s),"
               "order：(%s),direction：(%s),long_stop：(%s),short_stop：(%s),long(%s),short(%s),pos(%s)"%(
-            self.up,self.reverse,self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.first_price,
+            self.up,self.long_reverse,self.short_reverse,self.cta_engine.account,self.cta_engine.pnl,tick.last_price,self.first_price,
             tick.open_price,self.current_price,self.direction,self.stop_long,self.stop_short,self.long_time,self.short_time,
             self.pos))
         holding=self.cta_engine.offset_converter.get_position_holding(self.str_vt_symbol)
@@ -230,10 +229,10 @@ class DoubleMa22Strategy(CtaTemplate):
         self.entered = True
         self.init_data()
         if trade.direction == Direction.LONG:
-            self.stop_long=trade.price - 5
+            self.stop_long=trade.price - 8
             self.long_time += 1
         else:
-            self.stop_short = trade.price + 5
+            self.stop_short = trade.price + 8
             self.short_time += 1
         self.current_price = trade.price
         self.direction = trade.direction
