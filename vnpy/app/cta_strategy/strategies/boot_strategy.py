@@ -26,7 +26,7 @@ class DoubleMa22Strategy(CtaTemplate):
     day_start_time = time(hour=8, minute=58)
     day_exit_time = time(hour=14, minute=55)
     time_arrs_open=[time(hour=9, minute=00),time(hour=13, minute=30)]
-    time_arrs=[time(hour=10, minute=00),time(hour=11, minute=00)]
+    time_arrs=[time(hour=10, minute=00),time(hour=11, minute=00),time(hour=14, minute=00)]
 
 
 
@@ -164,12 +164,12 @@ class DoubleMa22Strategy(CtaTemplate):
         if tick.datetime.time().replace(microsecond=0) < self.day_exit_time:
             if self.long_pos != 0 and tick.last_price <= self.stop_long and self.stop_long != 0:  # 多头止
                 self.sell(self.stop_long, abs(self.long_pos))
-                if self.stop_price > 0  and self.short_pos==0 and self.short_reverse ==0 :  # 反转
+                if self.stop_price > 0  and self.short_pos==0 and self.up == 1 :  # 反转
                     self.short_reverse += 1
                     self.short(tick.last_price - 1, self.fixed_size)
             if self.short_pos != 0 and tick.last_price >= self.stop_short and self.stop_short != 0:  # 空头止
                 self.cover(self.stop_short, abs( self.short_pos))
-                if self.stop_price < 0  and self.long_pos==0 and self.long_reverse == 0:  # 反转
+                if self.stop_price < 0  and self.long_pos==0 and self.up == 0 :  # 反转
                     self.long_reverse += 1
                     self.buy(tick.last_price + 1, self.fixed_size)
         else:
