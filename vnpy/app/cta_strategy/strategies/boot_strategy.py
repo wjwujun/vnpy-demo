@@ -28,10 +28,7 @@ class DoubleMa22Strategy(CtaTemplate):
     time_arrs_open=[time(hour=9, minute=00),time(hour=13, minute=30)]
     time_arrs=[time(hour=10, minute=00),time(hour=11, minute=00),time(hour=14, minute=00)]
 
-
-
     close_price=[3,4,5,6,7,10,15,20,25,30,35,40,45,50,60,70,80,90,100,125,200,250,300,350,400,450,500]  #止盈等级，根据等级来确定止盈的价格
-    close_price_two = [4, 5, 5, 7, 10]
     arr_long = []   # 确定止盈的范围
     arr_short = []  # 确定止盈的范围
     stop_long = 0   # 多头止损
@@ -134,10 +131,7 @@ class DoubleMa22Strategy(CtaTemplate):
                     for i in self.close_price:
                         if abs(self.stop_price) >= i and (i not in self.arr_long):
                             self.cancel_all()
-                            if i in self.close_price_two:
-                                self.stop_long = tick.last_price - 4
-                            else:
-                                self.stop_long = tick.last_price - 5
+                            self.stop_long = tick.last_price - 5
                             self.arr_long.append(i)
                 else:  # 亏损
                     if self.stop_price >= 10:
@@ -154,10 +148,7 @@ class DoubleMa22Strategy(CtaTemplate):
                     for i in self.close_price:
                         if self.stop_price >= i and (i not in self.arr_short):
                             self.cancel_all()
-                            if i in self.close_price_two:
-                                self.stop_short = tick.last_price + 4
-                            else:
-                                self.stop_short = tick.last_price + 5
+                            self.stop_short = tick.last_price + 5
                             self.arr_short.append(i)
 
     def cover_sell_pos(self,tick: TickData):
