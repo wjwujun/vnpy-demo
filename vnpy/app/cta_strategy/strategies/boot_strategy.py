@@ -62,7 +62,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.am = ArrayManager()
         #bar生成
         self.bg = BarGenerator(self.on_bar)
-        self.up = random.randint(0, 1)
+        #self.up = random.randint(0, 1)
         self.str_vt_symbol = vt_symbol
         print("20191113************************************************444")
 
@@ -131,7 +131,7 @@ class DoubleMa22Strategy(CtaTemplate):
                     for i in self.close_price:
                         if abs(self.stop_price) >= i and (i not in self.arr_long):
                             self.cancel_all()
-                            self.stop_long = tick.last_price - 5
+                            self.stop_long = tick.last_price - 4
                             self.arr_long.append(i)
                 else:  # 亏损
                     if self.stop_price >= 10:
@@ -148,7 +148,7 @@ class DoubleMa22Strategy(CtaTemplate):
                     for i in self.close_price:
                         if self.stop_price >= i and (i not in self.arr_short):
                             self.cancel_all()
-                            self.stop_short = tick.last_price + 5
+                            self.stop_short = tick.last_price + 4
                             self.arr_short.append(i)
 
     def cover_sell_pos(self,tick: TickData):
@@ -220,10 +220,10 @@ class DoubleMa22Strategy(CtaTemplate):
         self.entered = True
         self.init_data()
         if trade.direction == Direction.LONG:
-            self.stop_long=trade.price - 8
+            self.stop_long=trade.price - 5
             self.long_time += 1
         else:
-            self.stop_short = trade.price + 8
+            self.stop_short = trade.price + 5
             self.short_time += 1
         self.current_price = trade.price
         self.direction = trade.direction
