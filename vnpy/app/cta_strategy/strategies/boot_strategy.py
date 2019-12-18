@@ -21,24 +21,16 @@ class DoubleMa22Strategy(CtaTemplate):
 
     # 策略变量
     fixed_size = 10      # 开仓数量
-    open_count = 7      # 每次开次数
+    open_count = 20      # 每次开次数
     ma_value = 0        #20min avgrage
     day_start_time = time(hour=8, minute=58)
     day_exit_time = time(hour=14, minute=55)
     time_arrs_open=[time(hour=9, minute=00),time(hour=13, minute=30)]
-    time_arrs=[time(hour=10, minute=00),time(hour=11, minute=00),
-               time(hour=13, minute=35),
-               time(hour=13, minute=40),
-               time(hour=13, minute=45),
-               time(hour=13, minute=50),
-               time(hour=13, minute=55),
-               time(hour=14, minute=5),
-               time(hour=14, minute=10),
-               time(hour=14, minute=15),
-               time(hour=14, minute=20),
+    time_arrs=[time(hour=10, minute=00),
+               time(hour=11, minute=00),
                time(hour=14, minute=00)]
 
-    close_price=[3,4,5,6,7,8,9,10,15,20,25,30,35,40,45,50,60,70,80,90,100,125,200,250,300,350,400,450,500]  #止盈等级，根据等级来确定止盈的价格
+    close_price=[4,5,6,7,8,9,10,15,20,25,30,35,40,45,50,60,70,80,90,100,125,200,250,300,350,400,450,500]  #止盈等级，根据等级来确定止盈的价格
     arr_long = []   # 确定止盈的范围
     arr_short = []  # 确定止盈的范围
     stop_long = 0   # 多头止损
@@ -72,7 +64,7 @@ class DoubleMa22Strategy(CtaTemplate):
         self.am = ArrayManager()
         #bar生成
         self.bg = BarGenerator(self.on_bar)
-        #self.up = random.randint(0, 1)
+        self.up = random.randint(0, 1)
         self.str_vt_symbol = vt_symbol
         print("20191113************************************************444")
 
