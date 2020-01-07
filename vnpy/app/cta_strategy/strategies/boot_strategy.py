@@ -164,18 +164,18 @@ class DoubleMa22Strategy(CtaTemplate):
         if tick.datetime.time().replace(microsecond=0) < self.day_exit_time:
             if self.long_pos != 0 and tick.last_price <= self.stop_long and self.stop_long != 0:  # 多头止
                 self.sell(self.stop_long, abs(self.long_pos))
-                if self.entered and self.stop_price > 0  and self.short_pos==0 and self.up == 1 :  # 反转
-                    self.entered = False
-                    self.cancel_all()  # 取消所有未成交本地单
-                    self.short_reverse += 1
-                    self.short(tick.last_price - 1, self.fixed_size)
+                # if self.entered and self.stop_price > 0  and self.short_pos==0 and self.up == 1 :  # 反转
+                #     self.entered = False
+                #     self.cancel_all()  # 取消所有未成交本地单
+                #     self.short_reverse += 1
+                #     self.short(tick.last_price - 1, self.fixed_size)
             if self.short_pos != 0 and tick.last_price >= self.stop_short and self.stop_short != 0:  # 空头止
                 self.cover(self.stop_short, abs( self.short_pos))
-                if self.entered and self.stop_price < 0  and self.long_pos==0 and self.up == 0 :  # 反转
-                    self.entered = False
-                    self.cancel_all()  # 取消所有未成交本地单
-                    self.long_reverse += 1
-                    self.buy(tick.last_price + 1, self.fixed_size)
+                # if self.entered and self.stop_price < 0  and self.long_pos==0 and self.up == 0 :  # 反转
+                #     self.entered = False
+                #     self.cancel_all()  # 取消所有未成交本地单
+                #     self.long_reverse += 1
+                #     self.buy(tick.last_price + 1, self.fixed_size)
         else:
             # 白盘收仓
             self.end_trade(tick)
