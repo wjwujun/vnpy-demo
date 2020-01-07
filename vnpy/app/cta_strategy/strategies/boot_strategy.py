@@ -133,7 +133,7 @@ class DoubleMa22Strategy(CtaTemplate):
                         if abs(self.stop_price) >= i and (i not in self.arr_long):
                             self.cancel_all()
                             if i < 10:
-                                self.stop_long = tick.last_price - 2
+                                self.stop_long = tick.last_price - 3
                             else:
                                 self.stop_long = tick.last_price - 5
                             self.arr_long.append(i)
@@ -142,20 +142,20 @@ class DoubleMa22Strategy(CtaTemplate):
                         self.cancel_all()  # 取消所有未成交本地单
                         self.sell(tick.last_price - 1, abs(self.pos))  # 亏损超过10点，立马平仓
                     else:
-                        self.stop_long = max(self.current_price - 6, self.stop_long)  # 亏损止损价
+                        self.stop_long = max(self.current_price - 8, self.stop_long)  # 亏损止损价
             else:
                 if self.stop_price < 0:  # 亏损
                     if self.stop_price <= -10:
                         self.cancel_all()  # 取消所有未成交本地单
                         self.cover(tick.last_price + 1, abs(self.pos))  # 亏损超过10点，立马平仓
                     else:
-                        self.stop_short = min(self.current_price + 6, self.stop_short)  # 亏损止损价
+                        self.stop_short = min(self.current_price + 8, self.stop_short)  # 亏损止损价
                 else:  # 盈利
                     for i in self.close_price:
                         if self.stop_price >= i and (i not in self.arr_short):
                             self.cancel_all()
                             if i<10:
-                                self.stop_short = tick.last_price + 2
+                                self.stop_short = tick.last_price + 3
                             else:
                                 self.stop_short = tick.last_price + 5
                             self.arr_short.append(i)
@@ -233,10 +233,10 @@ class DoubleMa22Strategy(CtaTemplate):
         self.entered = True
         self.init_data()
         if trade.direction == Direction.LONG:
-            self.stop_long=trade.price - 6
+            self.stop_long=trade.price - 8
             self.long_time += 1
         else:
-            self.stop_short = trade.price + 6
+            self.stop_short = trade.price + 8
             self.short_time += 1
         self.current_price = trade.price
         self.direction = trade.direction
