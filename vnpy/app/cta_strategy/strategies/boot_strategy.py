@@ -113,7 +113,7 @@ class DoubleMa22Strategy(CtaTemplate):
                 self.cancel_all()  # 取消所有未成交本地单
                 self.entered = False
                 self.init_data()
-                if  self.up == 1:
+                if  self.open_price < tick.last_price:
                     self.buy(tick.last_price + 1, self.fixed_size)
                 else:
                     self.short(tick.last_price - 1, self.fixed_size)
